@@ -13,10 +13,10 @@
 <meta property="og:site_name" content="HWHuang的博客">
 <meta property="og:description" content="什么是HDFSHDFS是Hadoop的一个分布式文件系统 (Hadoop Distributed File System)。对外部客户机而言,HDFS 就像一个传统的分级文件系统。可以创建、删除、移动或重命名文件,等等。 HDFS在Hadoop框架中所处的位置如下图所示：  关于文件系统  文件系统由三部分组成:与**文件管理有关软件**、 **被管理文件**以及**实施文件管理所需数据结构**。">
 <meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFoverview/Hframework.tiff">
-<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFoverview/check.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFoverview/concurrent.tiff">
 <meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFoverview/check.tiff">
 <meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFoverview/redundency.tiff">
-<meta property="og:updated_time" content="2017-08-10T13:45:57.000Z">
+<meta property="og:updated_time" content="2017-08-10T14:08:17.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="HDFS简述">
 <meta name="twitter:description" content="什么是HDFSHDFS是Hadoop的一个分布式文件系统 (Hadoop Distributed File System)。对外部客户机而言,HDFS 就像一个传统的分级文件系统。可以创建、删除、移动或重命名文件,等等。 HDFS在Hadoop框架中所处的位置如下图所示：  关于文件系统  文件系统由三部分组成:与**文件管理有关软件**、 **被管理文件**以及**实施文件管理所需数据结构**。">
@@ -122,7 +122,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
 从系统角度来看,文件系统是对文件存储器空 间进行组织和分配,负责文件存储并对存入的 文件进行保护和检索的系统。  
 </code></pre></blockquote>
 <h2 id="HDFS所能提供的"><a href="#HDFS所能提供的" class="headerlink" title="HDFS所能提供的"></a>HDFS所能提供的</h2><h3 id="大规模数据分布存储能力"><a href="#大规模数据分布存储能力" class="headerlink" title="大规模数据分布存储能力"></a>大规模数据分布存储能力</h3><p>​    Hadoop能够将超大的数据分块存储到不同的分区上，从而实现存储超大数据的功能。</p>
-<h3 id="高并发访问能力"><a href="#高并发访问能力" class="headerlink" title="高并发访问能力"></a>高并发访问能力</h3><p><img src="/2017/08/10/0810HDFoverview/check.tiff" alt=""><br>​    数据存在于多个节点上，读取的时候可以并发读取）</p>
+<h3 id="高并发访问能力"><a href="#高并发访问能力" class="headerlink" title="高并发访问能力"></a>高并发访问能力</h3><p><img src="/2017/08/10/0810HDFoverview/concurrent.tiff" alt=""><br>​    数据存在于多个节点上，读取的时候可以并发读取）</p>
 <h3 id="流式文件访问-提供简单的一致性模型"><a href="#流式文件访问-提供简单的一致性模型" class="headerlink" title="流式文件访问,提供简单的一致性模型"></a>流式文件访问,提供简单的一致性模型</h3><p>​    DFS是用<strong>流处理方式</strong>处理文件, 每个文件在系统里都能找到它的本地化映像,所以对于用户来说,别管文件是什么格式的,也不用在意被分到哪里,只管从DFS里取出就可以了。<br>​    一次写入,多次读取。 <u>数据源通常由源生成或从数据源直接复制而来,接着长时间在此数据集上进行各类分析</u>,大数据不需要搬来搬去。</p>
 <h3 id="强大的容错能力（冗余存储）"><a href="#强大的容错能力（冗余存储）" class="headerlink" title="强大的容错能力（冗余存储）"></a>强大的容错能力（冗余存储）</h3><p><img src="/2017/08/10/0810HDFoverview/check.tiff" alt=""><br>​    每个分片文件需要分片服务器校验。</p>
 <p>​    </p>
@@ -170,7 +170,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj66hyfvl0004k0jo1d8yayv1" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj66ir8wd0000m9jomkpebe7a" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -185,19 +185,12 @@ HDFS在Hadoop框架中所处的位置如下图所示：
 <ul id="article-nav" class="nav nav-pills nav-justified">
   
   <li role="presentation">
-    <a href="/2017/08/07/cap/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2017/08/10/0810HDFSreadwrite/" id="article-nav-older" class="article-nav-link-wrap">
       <i class="fa fa-chevron-left pull-left"></i>
-      <span class="article-nav-link-title">cap理论</span>
-    </a>
-  </li>
-  
-  
-  <li role="presentation">
-    <a href="/2017/08/10/0810HDFSreadwrite/" id="article-nav-newer" class="article-nav-link-wrap">
       <span class="article-nav-link-title">HDFS的读写策略</span>
-      <i class="fa fa-chevron-right pull-right"></i>
     </a>
   </li>
+  
   
 </ul>
 
@@ -257,11 +250,11 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     <ul class="sidebar-module-list">
       
         <li>
-          <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
+          <a href="/2017/08/10/0810HDFoverview/">HDFS简述</a>
         </li>
       
         <li>
-          <a href="/2017/08/10/0810HDFoverview/">HDFS简述</a>
+          <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
         </li>
       
         <li>
