@@ -3,21 +3,22 @@
 <head>
   <meta charset="utf-8">
   
-  <title>HWHuang的博客</title>
+  <title>HDFS的读写策略 | HWHuang的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="HDFS的读写策略#软件学院实习/大数据 向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）">
+  <meta name="description" content="​    向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）， 客户端按照就近原则，调用输入">
+<meta name="keywords" content="分布式系统,HDFS">
 <meta property="og:type" content="article">
-<meta property="og:title" content="HWHuang的博客">
+<meta property="og:title" content="HDFS的读写策略">
 <meta property="og:url" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/index.html">
 <meta property="og:site_name" content="HWHuang的博客">
-<meta property="og:description" content="HDFS的读写策略#软件学院实习/大数据 向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）">
-<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/images/0810/a_client_reading_data_from_HDFS.png">
-<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/images/0810/a_client_writing_data_to_HDFS.png">
-<meta property="og:updated_time" content="2017-08-10T13:26:44.000Z">
+<meta property="og:description" content="​    向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）， 客户端按照就近原则，调用输入">
+<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/a_client_reading_data_from_HDFS.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/a_client_writing_data_to_HDFS.png">
+<meta property="og:updated_time" content="2017-08-10T13:40:08.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="HWHuang的博客">
-<meta name="twitter:description" content="HDFS的读写策略#软件学院实习/大数据 向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）">
-<meta name="twitter:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/images/0810/a_client_reading_data_from_HDFS.png">
+<meta name="twitter:title" content="HDFS的读写策略">
+<meta name="twitter:description" content="​    向HDFS读写数据的过程中涉及到以下几个部分：  客户端节点 客户端节点上的JVM 数据节点 名称节点  从HDFS读取数据​流程如下：  客户端回调用FileSystem的实例DistributedFileSystem的open方法，获得这个文件的输入流； 以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序）， 客户端按照就近原则，调用输入">
+<meta name="twitter:image" content="http://yoursite.com/2017/08/10/0810HDFSreadwrite/a_client_reading_data_from_HDFS.png">
   
     <link rel="alternate" href="/atom.xml" title="HWHuang的博客" type="application/atom+xml">
   
@@ -86,7 +87,7 @@
     
   
     <h1 class="article-title" itemprop="name">
-      (no title)
+      HDFS的读写策略
     </h1>
   
 
@@ -95,26 +96,29 @@
 
   <div class="article-meta">
     <div class="article-datetime">
-  <a href="/2017/08/10/0810HDFSreadwrite/" class="article-date"><time datetime="2017-08-10T13:20:30.000Z" itemprop="datePublished">2017-08-10</time></a>
+  <a href="/2017/08/10/0810HDFSreadwrite/" class="article-date"><time datetime="2017-08-10T13:29:25.000Z" itemprop="datePublished">2017-08-10</time></a>
 </div>
 
     
     
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
 
   </div>
   <div class="article-inner">
 
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="HDFS的读写策略"><a href="#HDFS的读写策略" class="headerlink" title="HDFS的读写策略"></a>HDFS的读写策略</h1><p>#软件学院实习/大数据</p>
-<p>向HDFS读写数据的过程中涉及到以下几个部分：</p>
+        <p>​    向HDFS读写数据的过程中涉及到以下几个部分：</p>
 <ol>
 <li>客户端节点</li>
 <li>客户端节点上的JVM</li>
 <li>数据节点</li>
 <li>名称节点</li>
 </ol>
-<h2 id="从HDFS读取数据"><a href="#从HDFS读取数据" class="headerlink" title="从HDFS读取数据"></a>从HDFS读取数据</h2><p><img src="./images/0810/a_client_reading_data_from_HDFS.png" alt=""><br>​<br>流程如下：</p>
+<h2 id="从HDFS读取数据"><a href="#从HDFS读取数据" class="headerlink" title="从HDFS读取数据"></a>从HDFS读取数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_reading_data_from_HDFS.png" alt=""><br>​<br>流程如下：</p>
 <ol>
 <li>客户端回调用FileSystem的实例<code>DistributedFileSystem</code>的open方法，获得这个文件的<strong>输入流</strong>；</li>
 <li>以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序），</li>
@@ -122,7 +126,7 @@
 <li>客户端读取到数据块末端，将关闭与这个DataNode 的连接，然后<strong>重新查找</strong>下一个数据块。</li>
 <li>重复2-4直到当客户端读取完成，<code>DFSInputStream</code>将被关闭；</li>
 </ol>
-<h2 id="向HDFS写数据"><a href="#向HDFS写数据" class="headerlink" title="向HDFS写数据"></a>向HDFS写数据</h2><p><img src="./images/0810/a_client_writing_data_to_HDFS.png" alt=""></p>
+<h2 id="向HDFS写数据"><a href="#向HDFS写数据" class="headerlink" title="向HDFS写数据"></a>向HDFS写数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_writing_data_to_HDFS.png" alt=""></p>
 <ol>
 <li>客户端通过在<code>DistributedFileSystem</code>调用<code>create</code>方法来创建文件；</li>
 <li><code>DistributedFileSystem</code>的一个RPC调用NameNode，在文件系统的密码<strong>命名空间</strong>中创建一个新文件；NameNode 将通过一些检查，比如 ~文件是否存在~，客户端 ~是否拥有创建权限~ 等;通过检查之后，在NameNode 添加文件信息。注意，因为此时文件没有数据，所以<strong>NameNode 上也没有文件数据块的信息</strong>。</li>
@@ -143,11 +147,13 @@
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj66hb35b0000g9joyb3vmsk4" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj66hrnpw0000j7joo2hdhrtn" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
       
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HDFS/">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
 
     </footer>
   </div>
@@ -158,7 +164,7 @@
   <li role="presentation">
     <a href="/2017/08/10/0810HDFoverview/" id="article-nav-older" class="article-nav-link-wrap">
       <i class="fa fa-chevron-left pull-left"></i>
-      <span class="article-nav-link-title">(no title)</span>
+      <span class="article-nav-link-title">HDFS简述</span>
     </a>
   </li>
   
@@ -185,7 +191,7 @@
   
   <div class="sidebar-module">
     <h4>Categories</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">2</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">4</span></li></ul>
   </div>
 
 
@@ -193,7 +199,7 @@
   
   <div class="sidebar-module">
     <h4>Tags</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">2</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">2</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
   </div>
 
 
@@ -202,7 +208,7 @@
   <div class="sidebar-module">
     <h4>Tag Cloud</h4>
     <p class="tagcloud">
-      <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
+      <a href="/tags/HDFS/" style="font-size: 15px;">HDFS</a> <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
     </p>
   </div>
 
@@ -221,11 +227,11 @@
     <ul class="sidebar-module-list">
       
         <li>
-          <a href="/2017/08/10/0810HDFSreadwrite/">(no title)</a>
+          <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
         </li>
       
         <li>
-          <a href="/2017/08/10/0810HDFoverview/">(no title)</a>
+          <a href="/2017/08/10/0810HDFoverview/">HDFS简述</a>
         </li>
       
         <li>
