@@ -75,6 +75,312 @@
         <div class="col-sm-8 blog-main">
           
   
+    <article id="post-0811JavaHadoop" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/11/0811JavaHadoop/">使用Java对HDFS进行文件操作</a>
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/11/0811JavaHadoop/" class="article-date"><time datetime="2017-08-11T11:38:25.000Z" itemprop="datePublished">2017-08-11</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="主要的API"><a href="#主要的API" class="headerlink" title="主要的API"></a>主要的API</h2><pre><code>在Java中，涉及到HDFS文件操作的API主要有以下几个：
+</code></pre><ol>
+<li>FileSystem</li>
+<li>FSDataOutputStream</li>
+<li>FSDataInputStream</li>
+<li>Path</li>
+<li>Configuration </li>
+<li><p>IOUtils</p>
+<h3 id="FileSystem"><a href="#FileSystem" class="headerlink" title="FileSystem"></a>FileSystem</h3><p>FileSytem的全限定名为<code>org.apache.hadoop.fs.FileSystem</code>。<br><code>org.apache.hadoop.fs.FileSystem</code>是在分布式环境中<strong>访问和管理HDFS中的文件/目录的通用类</strong>。<br>文件内容以多个大尺寸块（64M）的形式存储在datanode中，namenode中记录了这些块的信息和文件的元信息。<br>FileSystem可以读或者<strong>按块的顺序流式</strong>的访问。<br>FileSystem首先从NameNode中得到块的信息，然后<strong>一个接一个</strong>的读。 ~它打开第一个块，它将读完关闭后才访问下一块~ 。<br>HDFS的复制块带来了更高的可靠性和可扩展性。如果client是数据节点中的一个，它将先访问本地，如果失败的话，它才会到集群的其他节点去访问。</p>
+<p><code>FileSystem</code>使用<code>FSDataOutputStream</code> 及<code>FSDataInputStream</code>来读写流的内容。Hadoop提供了多种FileSystem的实现：</p>
+</li>
+</ol>
+<ul>
+<li>DistributedFileSystem（DFS）：在分布式的环境中，访问HDFS文件</li>
+<li>LocalFileSystem:在本地系统中访问HDFS文件</li>
+<li>FTPFileSystem：访问HDFS文件的FTP客户端</li>
+<li>WebHdfsFileSystem：通过web接口访问HDFS文件。</li>
+</ul>
+<h4 id="常用方法"><a href="#常用方法" class="headerlink" title="常用方法"></a>常用方法</h4><p>FileSystem 的常用操作和相关方法：</p>
+<ol>
+<li>创建文件<ul>
+<li><code>booleancreateNewFile(Path f )</code><ul>
+<li><strong>不会覆盖</strong>已有文件</li>
+<li>创建成功返回true,失败返回false<br>• <code>FSDataOutputStreamcreate(Path f)</code><br>• <strong>覆盖</strong>已有文件<br>• 创建文件并返回输出流<br>• <code>FSDataOutputStreamcreate(Path f,booleanoverwrite)</code><br>• 创建文件并返回输出流<br>• <code>FSDataOutputStreamcreate(Path f,boolean overwrite,int buffer)</code><br>• <code>FSDataOutputStreamcreate(Path f,boolean overwrite,int buffer,short replication,long blockSize)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>打开文件<ul>
+<li><code>FSDataInputStreamopen(Pathf)</code></li>
+<li><code>FSDataInputStreamopen(Pathf,intbufferSize)</code><ul>
+<li>返回输入流</li>
+<li>如果文件不存在会抛出异常</li>
+<li>不指定bufferSize时,会从Configuration中读取 io.file.buffer.size,默认为4096字节</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>文件追加<br>• <code>FSDataOutputStream append(Path f)</code><br>• <code>FSDataOutputStream append(Path f, int bufferSize)</code><br>   • 块不足64M时,会补足到64M<br>   • 块达到64M之前,该块不可见,ls看不到该块新增的大小,也无 法读取<br>   • 不能同时多个writer追加同一个文件</li>
+<li>从本地拷贝文件到HDFS<ul>
+<li><code>void copyFromLocalFile (Path src, Path dst)</code></li>
+<li><code>void moveFromLocalFile (Path src, Path dst)</code></li>
+</ul>
+</li>
+<li>从HDFS拷贝文件到本地<ul>
+<li><code>void copyToLocalFile(boolean delsrc,Path src,Path dst)</code></li>
+<li><code>void moveToLocalFile (Path src, Path dst)</code></li>
+</ul>
+</li>
+<li>创建目录<ul>
+<li>boolean mkdirs (Path f)<br>• boolean mkdirs (Path f, FsPermission permission)<br>• static boolean mkdirs (FileSystem fs, Path dir, FsPermission permission)<br>• 支持多级目录同时创建 (类似mkdir -p)<br>• 默认权限是755<br>• 成功返回true</li>
+</ul>
+</li>
+<li>删除及重命名<ul>
+<li><code>boolean delete (Path f, boolean recursive)</code></li>
+<li><code>boolean deleteOnExit (f)</code> 当关闭FileSystem时,才会删除</li>
+</ul>
+</li>
+<li>获取文件或目录信息<ul>
+<li>FileStatus[ ] listStatus (Path f, PathFilter filter)<br>• FileStatus[ ] listStatus (Path[ ] dir, PathFilter filter)<br>FileStatus信息包括:</li>
+<li>绝对路径</li>
+<li>文件大小(单位:字节)</li>
+<li>文件访问时间</li>
+<li>块大小、复制份数</li>
+<li>文件所属用户、组、访问权限</li>
+</ul>
+</li>
+<li>设置文件或目录属性<ul>
+<li>void setOwner (Path p, String username, String groupname)<ul>
+<li>设置文件或目录所属用户及组</li>
+<li>参数p指定文件或目录</li>
+<li>参数username,设置此文件或目录的所属用户 – 只返回列出指定目录下的文件或目录信息<br>• void setPermission (Path p, FsPermission permission)<br>• 设置文件或目录权限<br>• 参数p指定文件或目录<br>• 参数permission,指定权限,权限同linux权限雷同<br>• void setReplication (Path f, short replication)<br>• 设置文件复制份数<br>• 参数f指定文件<br>• 参数replication指定复制份数</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>获取文件或目录信息<ul>
+<li>void setTimes (Path f, long mtime, long atime)<br>设置文件的修改及访问时间</li>
+</ul>
+</li>
+</ol>
+<h3 id="FSDataOutputStream"><a href="#FSDataOutputStream" class="headerlink" title="FSDataOutputStream"></a>FSDataOutputStream</h3><pre><code>FSDataOutputStream的全限定名是`org.apache.hadoop.fs.FSDataOutputStream`。
+使用Java向HDFS**写入数据**时需要用到的流。
+</code></pre><h3 id="FSDataInputStream"><a href="#FSDataInputStream" class="headerlink" title="FSDataInputStream"></a>FSDataInputStream</h3><pre><code>FSDataInputStream的全限定名是`org.apache.hadoop.fs. FSDataInputStream `。
+使用Java向HDFS**读取数据**时需要用到的流。
+</code></pre><h3 id="Path"><a href="#Path" class="headerlink" title="Path"></a>Path</h3><pre><code>Path的全限定名为`org.apache.hadoop.fs.Path`
+用来封装HDFS的路径。
+</code></pre><h4 id="常用的方法"><a href="#常用的方法" class="headerlink" title="常用的方法"></a>常用的方法</h4><p>Path的常有方法有：</p>
+<ol>
+<li><code>int depth()</code>：返回路径的深度</li>
+<li><code>String getName()</code>： 返回路径上最后的资源名称</li>
+<li><code>Path getParent()</code>：返回父目录，如果已是根目录则返回null</li>
+<li><code>Path suffix(String suffix)</code>：参数suffix给Path增加后缀，返回加完后缀的Path实例；</li>
+<li><code>getFileSystem (Configuration conf)</code>：返回该Path所属的文件系统实例</li>
+</ol>
+<h3 id="Configuration"><a href="#Configuration" class="headerlink" title="Configuration"></a>Configuration</h3><pre><code>Configuration全限定名为
+</code></pre><p><code>org.apache.hadoop.conf. Configuration</code>。<br>​<br>Configuration对配置文件的读取顺序：先加载缺省配置文件，再加载用户定义的配置文件；且对于每一个文件只加载一次：第一个在classpath出现的（这个和Linux系统上在匹配命令时候的逻辑是一样的）</p>
+<p><em>classpath的目录顺序:</em></p>
+<ol>
+<li>$HADOOP_CONF_DIR</li>
+<li>$JAVA_HOME/lib/tools.jar 如果$HADOOP_HOME目录下有build目录，则添加build下各子目录</li>
+<li>$HADOOP_HOME/hadoop-core-*.jar</li>
+<li>$HADOOP_HOME/lib/*.jar</li>
+<li>用户在hadoop-env.sh中定义的$HADOOP_CLASS_PATH</li>
+<li>当前作为hadoop jar …参数提交的JAR包</li>
+</ol>
+<h4 id="常用方法-1"><a href="#常用方法-1" class="headerlink" title="常用方法"></a>常用方法</h4><pre><code>Configuration的常用方法有:
+</code></pre><ol>
+<li>static void addDefaultResource(String name)</li>
+<li>void addResource(InputStream in)</li>
+<li>void addResource (Path file)  本地文件</li>
+<li>void addResource(String name)  classpath中的文件</li>
+<li>void addResource (URL url)void set(String name, String value)</li>
+<li>void setBoolean(String name, boolean value)</li>
+<li>void setInt(String name, String value)</li>
+<li>void setLong(String name, long value)</li>
+<li>void setFloat(String name, float value)</li>
+<li>void setIfUnset(String name, String value)</li>
+<li>void setBooleanIfUnset(String name, boolean value)</li>
+<li>String get(String name)</li>
+<li>boolean getBoolean(String name, boolean defaultValue)</li>
+</ol>
+<h3 id="IOUtils"><a href="#IOUtils" class="headerlink" title="IOUtils"></a>IOUtils</h3><pre><code>IOUtils的全限定名是`org.apache.hadoop.fs. IOUtils `。
+IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
+</code></pre><h4 id="常用方法-2"><a href="#常用方法-2" class="headerlink" title="常用方法"></a>常用方法</h4><p>IOUtils的常用方法有：</p>
+<ul>
+<li>public static void copyBytes (InputStream in , outputStream out,<br>Configuration conf)<br>• public static void copyBytes (InputStream in , outputStream out, Configuration conf, boolean close)</li>
+</ul>
+<h2 id="开发基本步骤"><a href="#开发基本步骤" class="headerlink" title="开发基本步骤"></a>开发基本步骤</h2><p>使用Java在HDFS上的基本开发步骤如下：</p>
+<ol>
+<li>实例化<code>Configuration</code></li>
+<li>实例化<code>FileSystem</code><ol>
+<li>获取相关Stream进行文件／目录操作</li>
+</ol>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/11/0811JavaHadoop/" data-id="cj67suyah0006w7joog8jrh26" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HDFS/">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-0811HadoopIO" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/11/0811HadoopIO/">Hadoop IO操作</a>
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/11/0811HadoopIO/" class="article-date"><time datetime="2017-08-11T11:31:25.000Z" itemprop="datePublished">2017-08-11</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Hadoop的IO操作中涉及到几个问题：</p>
+<ol>
+<li>保持数据完整性</li>
+<li>数据压缩</li>
+<li>序列化</li>
+<li>存储数据的数据结构</li>
+</ol>
+<h2 id="数据完整性"><a href="#数据完整性" class="headerlink" title="数据完整性"></a>数据完整性</h2><p>​    针对数据在存储过程损坏和丢失的问题，Haddop采取了<strong>数据校验</strong>和<strong>后台进程检测数据块</strong>的方法。<br>​    数据校验采用的是<strong>循环冗余校验CRC-32</strong>。</p>
+<h3 id="验证时机"><a href="#验证时机" class="headerlink" title="验证时机"></a>验证时机</h3><ol>
+<li>数据节点负责在存储数据及其校验和前验证它们收到的数据（发生于数据块副本传输的时候） （存储时）；</li>
+<li>客户端读取数据节点上的数据时候，会验证校验和（读取时）；</li>
+<li>每个数据节点有一个后台进程定期验证存在该节点山的所有数据块（定时）；</li>
+</ol>
+<p>关于验证，涉及到两个类，一个是<code>FileSystem</code>，一个是<code>CheckSumFileSystem</code>。</p>
+<h2 id="基于文件的数据结构"><a href="#基于文件的数据结构" class="headerlink" title="基于文件的数据结构"></a>基于文件的数据结构</h2><p>HDFS和MR主要针对大数据文件来设计，在<em>小文件处理上效率低</em>。解决方法是选择一个容器，将这些小文件包装起来， 将整个文件作为一条记录，可以获取更高效率的储存和处理， 避免多次打开关闭流耗费计算资源.hdfs提供了两种类型的容器 <strong>SequenceFile</strong>和<strong>MapFile</strong>。<br><em>一言蔽之，这些文件结构用来解决HDFS存储小文件的痛点。</em></p>
+<h3 id="SequenceFile"><a href="#SequenceFile" class="headerlink" title="SequenceFile"></a>SequenceFile</h3><p>​    SequenceFile是Hadoop对二进制键／值对持久化的数据结构。<br>​    Sequence的内部结构如下：<br><img src="/2017/08/11/0811HadoopIO/The-internal-structure-of-a-sequence-file-with-no-compression-and-record-compression.png" alt=""></p>
+<p>​    Sequence file由一系列的二进制key/value组成，如果key为小文件名，value为文件内容，则可以将大批小文件合并成一个大文件。文件中每条记录是可序列化，可持久化的键值对，提相应的<strong>读写器</strong>和<strong>排序器</strong>，写操作根据压缩的类型分为3种：</p>
+<ul>
+<li><p>Write 无压缩写数据，</p>
+</li>
+<li><p>RecordCompressWriter记录级压缩文件，只压缩值</p>
+</li>
+<li><p>BlockCompressWrite块级压缩文件，键值采用独立压缩方式;</p>
+<p>关于压缩的对象，value可以压缩，key不可以压缩。</p>
+<h4 id="对SequenceFile的操作方法："><a href="#对SequenceFile的操作方法：" class="headerlink" title="对SequenceFile的操作方法："></a>对SequenceFile的操作方法：</h4><p>​    Hadoop-0.21.0版本开始中提供了SequenceFile，包括Writer，Reader和SequenceFileSorter类进行写， 读和排序操作。</p>
+</li>
+</ul>
+<p>​    该方案对于小文件的存取都比较自由，不限制用户和文件的多少， <strong>支持Append追加写入</strong>，支持三级文档压缩(不压缩、文件级、块级别)。</p>
+<h3 id="MapFile"><a href="#MapFile" class="headerlink" title="MapFile"></a>MapFile</h3><p>​    MapFile是<strong>经过排序</strong>过后的<strong>带索引</strong>的SequenceFile可以根据键进行查找。</p>
+<p><img src="/2017/08/11/0811HadoopIO/mapFile.png" alt=""></p>
+<p>​    一个MapFile ~可以通过SequenceFile的地址，进行分类查找的格式~ 。使用这个格 式的优点在于，首先会将SequenceFile中的地址都加载入内存，并且进行了key 值排序，从而提供更快的数据查找。<br>与SequenceFile只生成一个文件不同，MapFile<strong>生成一个文件夹</strong>。 索引模型按<strong>128个键</strong>建立的，可以通过<code>io.map.index.interval</code>来修改。</p>
+<p>​    </p>
+<h3 id="MapFile和SequenceFile的比较"><a href="#MapFile和SequenceFile的比较" class="headerlink" title="MapFile和SequenceFile的比较"></a>MapFile和SequenceFile的比较</h3><ol>
+<li>SequenceFile文件是用来存储key-value数据的，但它并<strong>不保证这些存储的key-value是有序的</strong>；MapFile文件则可以看做是存储有序key-value的 SequenceFile文件。</li>
+<li>MapFile文件保证key-value的有序（基于key）是通过 ~每一次写入 key-value时的检查机制~ ，这种检查机制其实很简单，就是 ~保证当前正要写入的key-value与上一个刚写入的key-value符合设定的顺序~ ；但是，这种有序是由用户来保证的，一旦写入的key-value不符合key的非递减顺序，则会直接报错而不是自动的去对输入的key-value排序；</li>
+</ol>
+<h2 id="压缩"><a href="#压缩" class="headerlink" title="压缩"></a>压缩</h2><p>​    引入压缩是为了<strong>减少储存文件所需空间</strong>，还可以<strong>降低其在网络上传输的时间</strong>。</p>
+<p>​    此处简单列出Hadoop上的常用的压缩：<br><img src="/2017/08/11/0811HadoopIO/compressionTypes.tiff" alt=""></p>
+<p><em>关于切分</em><br>​    举Bzip2为例，Bzip2支持切分splitting.hdfs上文件1GB，如按照默认块64MB，那么这个 文件被分为16个块（1024/64）。如果把这个块放入MR任务 ，将有<strong>16个map任务输入</strong>。 如果算法不支持切分，后果是MR把这个文件作为<strong>一个Map输入</strong>。这样任务减少了，降低了数据的本地性。<br>​    </p>
+<h3 id="Hadoop中实现压缩的方法"><a href="#Hadoop中实现压缩的方法" class="headerlink" title="Hadoop中实现压缩的方法"></a>Hadoop中实现压缩的方法</h3><p>​    大致说来有两种途径：CodeC和使用本地库。</p>
+<h4 id="Codec"><a href="#Codec" class="headerlink" title="Codec"></a>Codec</h4><p>​    Hadoop中压缩解压类实现<code>CompressionCodec</code>接口<code>createOutputStream</code>来创建一个<code>CompressionOutputStream</code>，将其压缩格式写入底层的流。</p>
+<h3 id="本地库"><a href="#本地库" class="headerlink" title="本地库"></a>本地库</h3><p>​    Hadoop使用java开发，但是有些需求和操作并不适合java，所以引入了本地 库 native。可以高效执行某些操作。<br>如果频繁使用原生库做压解压任务，可以使用 codecpool，通过CodecPool的getCompressor方法获得Compressor对象， 需要传入Codec 。这样可以节省创建Codec对象开销 ，允许反复使用。<br>​<br>​    不同的压缩方法性能上各不相同，<strong>根据不同的使用场景来选择最合适的压缩算法</strong>。</p>
+<p>各个压缩算法的特点如下：    </p>
+<ol>
+<li>Gzip 优点<strong>是压缩率高，速度快</strong>。Hadoop支持与直接处理文本一 样。缺点不支持split，当文件压缩在128m内，都可以用gzip（也就是说存在于一个数据块内）；</li>
+<li>Izo 优点压缩速度快，具有合理的压缩率，支持split，是<strong>最流行的</strong>压缩格式。支持native库；缺点是比gzip压缩率低，<strong>hadoop本身不支持</strong>，需要安装；在应用中对lzo格式文件需要处理如 指定 inputformat为lzo格式</li>
+<li>Snappy压缩 高速压缩率合理支持本地库。不支持split， <strong>hadoop不支持</strong>，要安装linux没有对应命令；当MR输出数据较大， 作为到reduce数据压缩格式</li>
+<li>Bzip2 支持split，很高的压缩率，比gzip高，<strong>hadoop支持但不支持native</strong>，linux自带命令使用方便。缺点压缩解压速度慢</li>
+</ol>
+<h2 id="序列化"><a href="#序列化" class="headerlink" title="序列化"></a>序列化</h2><h3 id="Hadoop引入序列化的原因"><a href="#Hadoop引入序列化的原因" class="headerlink" title="Hadoop引入序列化的原因"></a>Hadoop引入序列化的原因</h3><ol>
+<li>Hadoop在<strong>集群之间通信或者RPC调用时需要序列化</strong>，而且要求序列化要快，且体积要小，占用带宽小；</li>
+<li><strong>Java的序列化机制不满足Hadoop的需求</strong>，占用大量计算开销，且序列化结果体积过大;；它的引用机制也导致大文件不能被切分，浪费空间；此外，很难对其他语言进行扩展使用；</li>
+<li>java的反序列化过程每次都会<strong>构造新的对象，不能复用对象</strong>。</li>
+</ol>
+<h3 id="Hadoop的序列化类"><a href="#Hadoop的序列化类" class="headerlink" title="Hadoop的序列化类"></a>Hadoop的序列化类</h3><p>Hadoop实现了大量的序列化类，如下如所示：<br><img src="/2017/08/11/0811HadoopIO/Writable-class-hierarchy.png" alt=""><br>重点关注右上方的部分，基本上是对Java基本类型的封装。<br><img src="/2017/08/11/0811HadoopIO/writable1.tiff" alt=""></p>
+<h3 id="Hadoop的序列化接口"><a href="#Hadoop的序列化接口" class="headerlink" title="Hadoop的序列化接口"></a>Hadoop的序列化接口</h3><h4 id="Writable"><a href="#Writable" class="headerlink" title="Writable"></a>Writable</h4><p>​    Hadoop的序列化类是通过实现序列化接口<code>Writable</code>实现的，<code>Writable</code>接口是基于DataInput与DatOutput的简单高效可序列化接口。继承该接口必须实现的两个方法是<code>readFile()</code>和<code>write()</code></p>
+<h4 id="WritableComparable"><a href="#WritableComparable" class="headerlink" title="WritableComparable"></a>WritableComparable</h4><p>​    同时实现序列化和比较。类似java的Comparable接口，用于类型的比较。MR其中一个阶段叫排序， 默认使用Key来排序。<br>需要同时实现三个方法<code>readFile()</code>，<code>write()</code>和<code>compareTo()</code>。</p>
+<h3 id="实现自定义的序列化对象"><a href="#实现自定义的序列化对象" class="headerlink" title="实现自定义的序列化对象"></a>实现自定义的序列化对象</h3><p>​    实现自定义的Hadoop序列化对象，也需要和内置的序列化对象一样，实现<code>Writable</code>接口，其中必须实现的两个方法是<code>readFile()</code>和<code>write()</code>。</p>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj67suy9y0001w7jo1mf2eqy9" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HDFS/">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-0810HDFSreadwrite" class="article article-type-post" itemscope itemprop="blogPost">
 
   <header class="article-header">
@@ -141,7 +447,7 @@
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj66j5yn90000oajoj2jb1ynq" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj67suy9t0000w7jodebwpawl" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -245,7 +551,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj66j5ynl0004oajobs6a4qpd" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj67suyad0005w7jo8y00ec9u" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -307,7 +613,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj66j5yne0001oajolkxabtm8" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj67suya60004w7jov9nuikpt" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -447,7 +753,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj66j5ynw0005oajolorqalmb" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj67suyan0009w7jofpl3v3t3" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -480,7 +786,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Categories</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">4</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">6</span></li></ul>
   </div>
 
 
@@ -488,7 +794,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Tags</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">2</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">6</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
   </div>
 
 
@@ -505,7 +811,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Archives</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">4</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">6</span></li></ul>
   </div>
 
 
@@ -514,6 +820,14 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   <div class="sidebar-module">
     <h4>Recents</h4>
     <ul class="sidebar-module-list">
+      
+        <li>
+          <a href="/2017/08/11/0811JavaHadoop/">使用Java对HDFS进行文件操作</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/11/0811HadoopIO/">Hadoop IO操作</a>
+        </li>
       
         <li>
           <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
@@ -525,10 +839,6 @@ HDFS在Hadoop框架中所处的位置如下图所示：
       
         <li>
           <a href="/2017/08/07/cap/">cap理论</a>
-        </li>
-      
-        <li>
-          <a href="/2017/08/07/test/">第一天作业笔记</a>
         </li>
       
     </ul>
