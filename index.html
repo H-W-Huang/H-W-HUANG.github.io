@@ -251,7 +251,7 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/11/0811JavaHadoop/" data-id="cj67suyah0006w7joog8jrh26" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/11/0811JavaHadoop/" data-id="cj68mys7f0006shjobsogejwj" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -352,9 +352,9 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
 <li>java的反序列化过程每次都会<strong>构造新的对象，不能复用对象</strong>。</li>
 </ol>
 <h3 id="Hadoop的序列化类"><a href="#Hadoop的序列化类" class="headerlink" title="Hadoop的序列化类"></a>Hadoop的序列化类</h3><p>Hadoop实现了大量的序列化类，如下如所示：<br><img src="/2017/08/11/0811HadoopIO/Writable-class-hierarchy.png" alt=""><br>重点关注右上方的部分，基本上是对Java基本类型的封装。<br><img src="/2017/08/11/0811HadoopIO/writable1.tiff" alt=""></p>
-<h3 id="Hadoop的序列化接口"><a href="#Hadoop的序列化接口" class="headerlink" title="Hadoop的序列化接口"></a>Hadoop的序列化接口</h3><h4 id="Writable"><a href="#Writable" class="headerlink" title="Writable"></a>Writable</h4><p>​    Hadoop的序列化类是通过实现序列化接口<code>Writable</code>实现的，<code>Writable</code>接口是基于DataInput与DatOutput的简单高效可序列化接口。继承该接口必须实现的两个方法是<code>readFile()</code>和<code>write()</code></p>
-<h4 id="WritableComparable"><a href="#WritableComparable" class="headerlink" title="WritableComparable"></a>WritableComparable</h4><p>​    同时实现序列化和比较。类似java的Comparable接口，用于类型的比较。MR其中一个阶段叫排序， 默认使用Key来排序。<br>需要同时实现三个方法<code>readFile()</code>，<code>write()</code>和<code>compareTo()</code>。</p>
-<h3 id="实现自定义的序列化对象"><a href="#实现自定义的序列化对象" class="headerlink" title="实现自定义的序列化对象"></a>实现自定义的序列化对象</h3><p>​    实现自定义的Hadoop序列化对象，也需要和内置的序列化对象一样，实现<code>Writable</code>接口，其中必须实现的两个方法是<code>readFile()</code>和<code>write()</code>。</p>
+<h3 id="Hadoop的序列化接口"><a href="#Hadoop的序列化接口" class="headerlink" title="Hadoop的序列化接口"></a>Hadoop的序列化接口</h3><h4 id="Writable"><a href="#Writable" class="headerlink" title="Writable"></a>Writable</h4><p>​    Hadoop的序列化类是通过实现序列化接口<code>Writable</code>实现的，<code>Writable</code>接口是基于DataInput与DatOutput的简单高效可序列化接口。继承该接口必须实现的两个方法是<code>readField()</code>和<code>write()</code></p>
+<h4 id="WritableComparable"><a href="#WritableComparable" class="headerlink" title="WritableComparable"></a>WritableComparable</h4><p>​    同时实现序列化和比较。类似java的Comparable接口，用于类型的比较。MR其中一个阶段叫排序， 默认使用Key来排序。<br>需要同时实现三个方法<code>readField()</code>，<code>write()</code>和<code>compareTo()</code>。</p>
+<h3 id="实现自定义的序列化对象"><a href="#实现自定义的序列化对象" class="headerlink" title="实现自定义的序列化对象"></a>实现自定义的序列化对象</h3><p>​    实现自定义的Hadoop序列化对象，也需要和内置的序列化对象一样，实现<code>Writable</code>接口，其中必须实现的两个方法是<code>readField()</code>和<code>write()</code>。</p>
 
       
     </div>
@@ -365,7 +365,7 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj67suy9y0001w7jo1mf2eqy9" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj68mys6v0001shjo98rhv0qt" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -447,7 +447,7 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj67suy9t0000w7jodebwpawl" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj68mys6o0000shjoi0lapqco" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -551,7 +551,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj67suyad0005w7jo8y00ec9u" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj68mys780005shjoidj2m75d" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -613,7 +613,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj67suya60004w7jov9nuikpt" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj68mys740004shjoplbiumif" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -753,7 +753,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj67suyan0009w7jofpl3v3t3" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj68mys7l0009shjotajjh2pw" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       

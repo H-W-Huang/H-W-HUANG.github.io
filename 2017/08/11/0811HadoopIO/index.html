@@ -17,7 +17,7 @@
 <meta property="og:image" content="http://yoursite.com/2017/08/11/0811HadoopIO/compressionTypes.tiff">
 <meta property="og:image" content="http://yoursite.com/2017/08/11/0811HadoopIO/Writable-class-hierarchy.png">
 <meta property="og:image" content="http://yoursite.com/2017/08/11/0811HadoopIO/writable1.tiff">
-<meta property="og:updated_time" content="2017-08-11T11:38:02.000Z">
+<meta property="og:updated_time" content="2017-08-12T01:41:40.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Hadoop IO操作">
 <meta name="twitter:description" content="Hadoop的IO操作中涉及到几个问题：  保持数据完整性 数据压缩 序列化 存储数据的数据结构  数据完整性​    针对数据在存储过程损坏和丢失的问题，Haddop采取了数据校验和后台进程检测数据块的方法。​    数据校验采用的是循环冗余校验CRC-32。 验证时机 数据节点负责在存储数据及其校验和前验证它们收到的数据（发生于数据块副本传输的时候） （存储时）； 客户端读取数据节点上的数据时">
@@ -169,9 +169,9 @@
 <li>java的反序列化过程每次都会<strong>构造新的对象，不能复用对象</strong>。</li>
 </ol>
 <h3 id="Hadoop的序列化类"><a href="#Hadoop的序列化类" class="headerlink" title="Hadoop的序列化类"></a>Hadoop的序列化类</h3><p>Hadoop实现了大量的序列化类，如下如所示：<br><img src="/2017/08/11/0811HadoopIO/Writable-class-hierarchy.png" alt=""><br>重点关注右上方的部分，基本上是对Java基本类型的封装。<br><img src="/2017/08/11/0811HadoopIO/writable1.tiff" alt=""></p>
-<h3 id="Hadoop的序列化接口"><a href="#Hadoop的序列化接口" class="headerlink" title="Hadoop的序列化接口"></a>Hadoop的序列化接口</h3><h4 id="Writable"><a href="#Writable" class="headerlink" title="Writable"></a>Writable</h4><p>​    Hadoop的序列化类是通过实现序列化接口<code>Writable</code>实现的，<code>Writable</code>接口是基于DataInput与DatOutput的简单高效可序列化接口。继承该接口必须实现的两个方法是<code>readFile()</code>和<code>write()</code></p>
-<h4 id="WritableComparable"><a href="#WritableComparable" class="headerlink" title="WritableComparable"></a>WritableComparable</h4><p>​    同时实现序列化和比较。类似java的Comparable接口，用于类型的比较。MR其中一个阶段叫排序， 默认使用Key来排序。<br>需要同时实现三个方法<code>readFile()</code>，<code>write()</code>和<code>compareTo()</code>。</p>
-<h3 id="实现自定义的序列化对象"><a href="#实现自定义的序列化对象" class="headerlink" title="实现自定义的序列化对象"></a>实现自定义的序列化对象</h3><p>​    实现自定义的Hadoop序列化对象，也需要和内置的序列化对象一样，实现<code>Writable</code>接口，其中必须实现的两个方法是<code>readFile()</code>和<code>write()</code>。</p>
+<h3 id="Hadoop的序列化接口"><a href="#Hadoop的序列化接口" class="headerlink" title="Hadoop的序列化接口"></a>Hadoop的序列化接口</h3><h4 id="Writable"><a href="#Writable" class="headerlink" title="Writable"></a>Writable</h4><p>​    Hadoop的序列化类是通过实现序列化接口<code>Writable</code>实现的，<code>Writable</code>接口是基于DataInput与DatOutput的简单高效可序列化接口。继承该接口必须实现的两个方法是<code>readField()</code>和<code>write()</code></p>
+<h4 id="WritableComparable"><a href="#WritableComparable" class="headerlink" title="WritableComparable"></a>WritableComparable</h4><p>​    同时实现序列化和比较。类似java的Comparable接口，用于类型的比较。MR其中一个阶段叫排序， 默认使用Key来排序。<br>需要同时实现三个方法<code>readField()</code>，<code>write()</code>和<code>compareTo()</code>。</p>
+<h3 id="实现自定义的序列化对象"><a href="#实现自定义的序列化对象" class="headerlink" title="实现自定义的序列化对象"></a>实现自定义的序列化对象</h3><p>​    实现自定义的Hadoop序列化对象，也需要和内置的序列化对象一样，实现<code>Writable</code>接口，其中必须实现的两个方法是<code>readField()</code>和<code>write()</code>。</p>
 
       
     </div>
@@ -182,7 +182,7 @@
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj67suy9y0001w7jo1mf2eqy9" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj68mys6v0001shjo98rhv0qt" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
