@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Hadoop_MapReduce | HWHuang的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="什么是MapReduce​    MapReduce是一个编程模型，用以进行大数据量的计算。​    Hadoop MapReduce是一个软件框架，基于该框架能够 容易地编写应用程序，这些应用程序能够运行在由上千个商用机器组成的大集群上，并以一种可靠的，具有容错能力的方式并行地处理上TB级别的海量数据集。 MapReduce的特点MapReduce的特点如下：  软件框架 并行处理  可靠且容错">
+<meta name="keywords" content="分布式系统,MapReduce">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hadoop_MapReduce">
+<meta property="og:url" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/index.html">
+<meta property="og:site_name" content="HWHuang的博客">
+<meta property="og:description" content="什么是MapReduce​    MapReduce是一个编程模型，用以进行大数据量的计算。​    Hadoop MapReduce是一个软件框架，基于该框架能够 容易地编写应用程序，这些应用程序能够运行在由上千个商用机器组成的大集群上，并以一种可靠的，具有容错能力的方式并行地处理上TB级别的海量数据集。 MapReduce的特点MapReduce的特点如下：  软件框架 并行处理  可靠且容错">
+<meta property="og:image" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/runAMapReduceJob.jpg">
+<meta property="og:image" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/mapreduceArch.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/keysAndValues.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/MRProcess.tiff">
+<meta property="og:updated_time" content="2017-08-14T14:45:01.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hadoop_MapReduce">
+<meta name="twitter:description" content="什么是MapReduce​    MapReduce是一个编程模型，用以进行大数据量的计算。​    Hadoop MapReduce是一个软件框架，基于该框架能够 容易地编写应用程序，这些应用程序能够运行在由上千个商用机器组成的大集群上，并以一种可靠的，具有容错能力的方式并行地处理上TB级别的海量数据集。 MapReduce的特点MapReduce的特点如下：  软件框架 并行处理  可靠且容错">
+<meta name="twitter:image" content="http://yoursite.com/2017/08/14/Hadoop-MapReduce/runAMapReduceJob.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="HWHuang的博客" type="application/atom+xml">
+  
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" integrity="sha384-XdYbMnZ/QjLh6iI4ogqCTaIjrFk87ip+ekIjefZch0Y+PvJ8CDYtEs1ipDmPorQ+" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="/css/styles.css">
+  
+
+</head>
+
+<body>
+  <nav class="navbar navbar-inverse">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-menu-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="main-menu-navbar">
+      <ul class="nav navbar-nav">
+        
+          <li><a class=""
+                 href="/index.html">Home</a></li>
+        
+          <li><a class=""
+                 href="/archives/">Archives</a></li>
+        
+      </ul>
+
+      <!--
+      <ul class="nav navbar-nav navbar-right">
+        
+          <li><a href="/atom.xml" title="RSS Feed"><i class="fa fa-rss"></i></a></li>
+        
+      </ul>
+      -->
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+  <div class="container">
+    <div class="blog-header">
+  <h1 class="blog-title">HWHuang的博客</h1>
+  
+</div>
+
+    <div class="row">
+        <div class="col-sm-8 blog-main">
+          <article id="post-Hadoop-MapReduce" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 class="article-title" itemprop="name">
+      Hadoop_MapReduce
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/14/Hadoop-MapReduce/" class="article-date"><time datetime="2017-08-14T14:39:19.000Z" itemprop="datePublished">2017-08-14</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="什么是MapReduce"><a href="#什么是MapReduce" class="headerlink" title="什么是MapReduce"></a>什么是MapReduce</h2><p>​    MapReduce是一个编程模型，用以进行大数据量的计算。<br>​    Hadoop MapReduce是一个软件框架，基于该框架能够 容易地编写应用程序，这些应用程序能够运行在由上千个商用机器组成的大集群上，并以一种<strong>可靠的</strong>，<strong>具有容错能力</strong>的方式并行地处理上TB级别的海量数据集。</p>
+<h3 id="MapReduce的特点"><a href="#MapReduce的特点" class="headerlink" title="MapReduce的特点"></a>MapReduce的特点</h3><p>MapReduce的特点如下：</p>
+<ol>
+<li>软件框架</li>
+<li>并行处理 </li>
+<li>可靠且容错 </li>
+<li>大规模集群 </li>
+<li>海量数据集</li>
+</ol>
+<h3 id="MapReduce的处理方式"><a href="#MapReduce的处理方式" class="headerlink" title="MapReduce的处理方式"></a>MapReduce的处理方式</h3><p>​    MapReduce处理工作的主要思想是：<strong>分而治之</strong>。<br>​    整个工作流程中涉及到4个实体：客户端，JobTracker，TaskTracker，HDFS。<br>​    在这四个实体中，和目前的编程有关的就是<strong>客户端</strong>，编写的就是MapReduce程序。<br>​    该工作流程如下图所示：<br><img src="/2017/08/14/Hadoop-MapReduce/runAMapReduceJob.jpg" alt=""></p>
+<p>​    客户端：提交MapReduce工作；<br>​    JobTracker：协调作业的运行，只有一个；<br>​    TaskTracker：处理作业划分后的任务，可以有多个；<br>​    HDFS：在其他实体之间<strong>共享</strong>作业文件；<br>‼️工作流程如下：</p>
+<ol>
+<li>客户端要<strong>编写mapreduce程序</strong>，配置好mapreduce的作业也就是<strong>job</strong>， 接下来向JobTracker请求一个jobID，这个时候JobTracker为该job任务分配一个新的ID值；</li>
+<li>接着JokTracker进行各种检查和计算，例如，<strong>输出目录是否存在</strong>（存在则无法运行），<strong>输入目录是否存在</strong>（不存在则不可运行），<strong>据输入计算输入分片(Input Split)</strong>，完成之后JobTracker为Job分配资源，客户端向JobTracker提交作业(submitJob)；</li>
+<li>JobTracker初始化作业，初始化主要做的是<strong>将Job放入一个内部的队列</strong>，让配置好的<strong>作业调度器</strong>能调度到这个作业。作业调度器会初始化这个job，初始化就是创建一个正在运行的job对象(封装任务和记录信息)， 以便JobTracker跟踪job的状态和进程</li>
+<li>初始化完毕，作业调度器获取输入分片信息，<strong>每个分片创建一个map任务</strong>；</li>
+<li>开始分配任务，taskTracker通过心跳包💗（5s为间隔）向JobTracker发送自己的状态，两者通过心跳包通信；</li>
+<li>开始执行任务。当jobtracker获得了最后一个完成指定任务的 tasktracker操作成功的通知时候，jobtracker会把整个job状态置为成功。</li>
+</ol>
+<h3 id="MapReduce的运行机制"><a href="#MapReduce的运行机制" class="headerlink" title="MapReduce的运行机制"></a>MapReduce的运行机制</h3><p><img src="/2017/08/14/Hadoop-MapReduce/mapreduceArch.tiff" alt=""><br>​    在Hadoop中，一个MapReduce作业会把输入的数据集切分为<strong>若干独立的数据块</strong>，由Map任务以<strong>完全并行</strong>的方式处理；<br>​    框架会<strong>对Map的输出先进行排序，</strong>然后把结果输入给Reduce任务；<br>作业的输入和输出都会<strong>被存储在文件系统中</strong>，整个框架负责任务的调度和监控，以及重新执行已经关闭的任务；<br>​    MapReduce框架和分布式文件系统是运行在<strong>一组相同的节点</strong>， 计算节点和存储节点都是在一起的；</p>
+<h3 id="MapReduce的输入输出"><a href="#MapReduce的输入输出" class="headerlink" title="MapReduce的输入输出"></a>MapReduce的输入输出</h3><p>​    在整个MapReduce作业中，涉及到<strong>三组键值对</strong>。</p>
+<p><img src="/2017/08/14/Hadoop-MapReduce/keysAndValues.tiff" alt=""><br>​    <k1，v1>：初始输入，作为map的输入；<br>​    <k2，v2>：map的输出，在经过shuffle（排序等操作）后，作为reduce的输入；<br>​    <k3，v3>：reduce的输出。</k3，v3></k2，v2></k1，v1></p>
+<h3 id="MapReduce的工作流程"><a href="#MapReduce的工作流程" class="headerlink" title="MapReduce的工作流程"></a>MapReduce的工作流程</h3><p>​    MapReduce的工作流程涉及到5个小流程：input，splitting，<strong>mapping</strong>，shuffling，<strong>reducing</strong>，final result。如下图所示：</p>
+<p><img src="/2017/08/14/Hadoop-MapReduce/MRProcess.tiff" alt=""><br>​    教程将其重新划分为<strong>5个阶段</strong>。输入分片(input split)、 map阶段、 combiner阶段、 shuffle阶段和 reduce阶段。</p>
+<h4 id="输入分片-input-split"><a href="#输入分片-input-split" class="headerlink" title="输入分片(input split):"></a>输入分片(input split):</h4><p>​    在进行map计算之前，mapreduce会根 据输入文件计算输入分片(input split)，每个输入分片(input split)针对一个map任务；<br>​    输入分片(input split)存储的并非数据本身，而是一个分片长度和 一个记录数据的位置的数组，输入分片(input split)往往和hdfs 的block(块)关系很密切</p>
+<blockquote>
+<p>假如我们设定hdfs的块的大小是64mb，如果我们输入有三个文件，大小分别 是3mb、65mb和127mb，那么mapreduce会把<strong>3mb文件分为一个输入分片（3mb &lt; 64mb）</strong> (input split)，<strong>65mb则是两个( 128mb &gt; 65mb &gt; 64mb)</strong>输入分片(input split)；而<strong>127mb也是两个输入分片（128mb &gt; 127mb &gt; 64mb）</strong>(input split)；<br>即我们如果在map计算前做输入分片调整，例如合并小文件，那么就会有5个 map任务将执行，而且每个map执行的数据大小不均，这个也是mapreduce 优化计算的一个关键点。  </p>
+</blockquote>
+<h4 id="map阶段"><a href="#map阶段" class="headerlink" title="map阶段"></a>map阶段</h4><p>​    程序员编写的map函数；</p>
+<h4 id="combine阶段"><a href="#combine阶段" class="headerlink" title="combine阶段"></a>combine阶段</h4><p>​    Combiner阶段是程序员可以选择的，<strong>combiner其实也是一种reduce操作</strong>，因此我们看见WordCount类里是用reduce进行加载的。<br>​    Combiner是一个<strong>本地化的reduce操作</strong>，它是map运算的后续操作，主要是在map计算出中间文件前做一个<strong>简单的合并重复key值的操作</strong>。</p>
+<blockquote>
+<p>例如：我们对文件里的单词频率做统计，map计算时候如果碰到一个hadoop的单词就会记录为1，但是这篇文章里hadoop可能会出现n多次，那么map输出 文件冗余就会很多，因此在reduce计算前对相同的key做一个合并操作， 那么文件会变小，这样就提高了宽带的传输效率，毕竟hadoop计算力宽带资源往往是计算的瓶颈也是最为宝贵的资源，但是combiner操作是有 风险的，使用它的原则是<strong>combiner的输入不会影响到reduce计算的最终输入</strong>，<br>​    例如:如果计算只是求总数，最大值，最小值可以使用combiner，但是做平 均值计算使用combiner的话，最终的reduce计算结果就会出错。  </p>
+</blockquote>
+<h4 id="shuffle阶段"><a href="#shuffle阶段" class="headerlink" title="shuffle阶段"></a>shuffle阶段</h4><p>​    将map的输出作为reduce的输入的过程。</p>
+<h4 id="reduce阶段"><a href="#reduce阶段" class="headerlink" title="reduce阶段"></a>reduce阶段</h4><p>​    和map函数一样也是程序员编写的,最终结果是存储在 hdfs上的。</p>
+<h2 id="琐碎"><a href="#琐碎" class="headerlink" title="琐碎"></a>琐碎</h2><blockquote>
+<p>每一个片都会开一个mapper，最终将所有分片进行聚合<br>所有的这些过程都是通过jobtracker进行调度的。<br>每个阶段都是一个进程（class），每个进程启动无数个mapper（线程）<br>有多少个key，就有多少个reducer。<br>分块－不同块内的数据是不相同的  </p>
+</blockquote>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/14/Hadoop-MapReduce/" data-id="cj6c9rzsa00058ijokwdhfisl" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MapReduce/">MapReduce</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+    
+<ul id="article-nav" class="nav nav-pills nav-justified">
+  
+  <li role="presentation">
+    <a href="/2017/08/11/0811JavaHadoop/" id="article-nav-older" class="article-nav-link-wrap">
+      <i class="fa fa-chevron-left pull-left"></i>
+      <span class="article-nav-link-title">使用Java对HDFS进行文件操作</span>
+    </a>
+  </li>
+  
+  
+</ul>
+
+
+  
+</article>
+
+
+
+
+        </div>
+        <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
+          
+  <div class="sidebar-module sidebar-module-inset">
+  <h4>About</h4>
+  <p></p>
+
+</div>
+
+
+  
+  <div class="sidebar-module">
+    <h4>Categories</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">7</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Tags</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/MapReduce/">MapReduce</a><span class="sidebar-module-list-count">1</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">7</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Tag Cloud</h4>
+    <p class="tagcloud">
+      <a href="/tags/HDFS/" style="font-size: 15px;">HDFS</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
+    </p>
+  </div>
+
+
+  
+  <div class="sidebar-module">
+    <h4>Archives</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">7</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Recents</h4>
+    <ul class="sidebar-module-list">
+      
+        <li>
+          <a href="/2017/08/14/Hadoop-MapReduce/">Hadoop_MapReduce</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/11/0811JavaHadoop/">使用Java对HDFS进行文件操作</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/11/0811HadoopIO/">Hadoop IO操作</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/10/0810HDFoverview/">HDFS简述</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+
+        </div>
+    </div>
+  </div>
+  <footer class="blog-footer">
+  <div class="container">
+    <div id="footer-info" class="inner">
+      &copy; 2017 H.W.Huang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+  
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js" integrity="sha384-8gBf6Y4YYq7Jx97PIqmTwLPin4hxIzQw5aDmUg/DDhul9fFpbbLcLh3nTIIDJKhx" crossorigin="anonymous"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+
+
+<script src="/js/script.js"></script>
+
+</body>
+</html>
