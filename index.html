@@ -75,6 +75,184 @@
         <div class="col-sm-8 blog-main">
           
   
+    <article id="post-hadoopMRAdv" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/15/hadoopMRAdv/">hadoop高级</a>
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/15/hadoopMRAdv/" class="article-date"><time datetime="2017-08-15T11:39:30.000Z" itemprop="datePublished">2017-08-15</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="MapReduce的具体过程"><a href="#MapReduce的具体过程" class="headerlink" title="MapReduce的具体过程"></a>MapReduce的具体过程</h2><p>​    MapReduce的工作流程涉及到5个小流程：input，splitting，<strong>mapping</strong>，shuffling，<strong>reducing</strong>。如下图所示：<br><img src="/2017/08/15/hadoopMRAdv/MRProcess.tiff" alt=""></p>
+<h3 id="Splitting"><a href="#Splitting" class="headerlink" title="Splitting"></a>Splitting</h3><p>​    在这个过程主要涉及到两个类<code>InputFormat</code>和<code>InputSplit</code>。</p>
+<h4 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h4><p>​    通过使用InputFormat，MapReduce框架可以做到：</p>
+<ol>
+<li>验证作业的输入的正确性；</li>
+<li>把<strong>输入文件</strong>切分成多个<strong>逻辑InputSplits</strong>，并把每一个InputSplit分别分发给一个<strong>单独的MapperTask</strong>；</li>
+<li><p>提供RecordReader的实现，这个RecordReader从指定的InputSplit中正确读出一条一条的Ｋ－Ｖ对，~这些 Ｋ－Ｖ对将由我们写的Mapper方法处理~ 。</p>
+<p>当数据传送给map时，map会将输入分片传送到InputFormat，InputFormat则调用方法<code>getRecordReader()</code>生成<code>RecordReader</code>，RecordReader再通过<code>creatKey()</code>、<code>creatValue()</code>方法创建可供map处理的一个一个的<key,value>对。简而言之，<code>InputFormat()</code>方法是用来<strong>生成可供map处理的<key,value>对</key,value></strong>的。</key,value></p>
+<p>默认使用的ITextInputFormat，在TextInputFormat中，每个文件（或其一部分）都会单独地作为map的输入，而这个是继承自FileInputFormat的。<br>之后，每行数据都会生成一条记录，每条记录则表示成<key,value>形式：</key,value></p>
+</li>
+</ol>
+<ul>
+<li>key值是每个数据的记录在数据分片中<strong>字节偏移量</strong>，数据类型LongWritable；</li>
+<li>value值是每行的内容，数据类型是Text。</li>
+</ul>
+<h4 id="关于inputSplit"><a href="#关于inputSplit" class="headerlink" title="关于inputSplit"></a>关于inputSplit</h4><p>​    任何分割操作的实现都继承自Apache抽象基类——InputSplit，它定义了分割的长度及位置。<br>​    InputSplit是hadoop定义的用来传送给每个单独的map的数据，InputSplit存储的<strong>并非数据本身</strong>，而是一个<strong>分片长度</strong>和一个<strong>记录数据位置的数组</strong>。生成InputSplit的方法可以通过InputFormat()来设置。</p>
+<p>参考：</p>
+<ol>
+<li><a href="http://blog.csdn.net/zolalad/article/details/12653093" target="_blank" rel="external">MapReduce中InputFormat和InputSplit解读 - zolalad的专栏        - CSDN博客</a></li>
+</ol>
+<h3 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h3><p><img src="/2017/08/15/hadoopMRAdv/mapstages.tiff" alt=""></p>
+<h4 id="Combiner"><a href="#Combiner" class="headerlink" title="Combiner"></a>Combiner</h4><p>​    每一个map都可能会产生大量的本地输出，Combiner的作用就是对map端 的输出先做一次合并，以减少在map和reduce节点之间的数据传输量， 以提高网络IO性能。</p>
+<p>​    Combiner的作用</p>
+<ol>
+<li>Combiner实现<strong>本地key</strong>的聚合，对map输出的key排序value进行迭代；</li>
+<li>Combiner还有本地reduce功能（其本质上就是一个reduce）</li>
+</ol>
+<p>Combiner作用图解：<br><img src="/2017/08/15/hadoopMRAdv/combiner.tiff" alt=""><br>可以看到，combiner是在分区之前开始工作的。</p>
+<p>​    Combiner的使用方法<br>在main方法里，使用一下方法指定某个job的combiner</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">job.setCombinerClass(MyReducer.class);</div></pre></td></tr></table></figure>
+<h4 id="Partitioner"><a href="#Partitioner" class="headerlink" title="Partitioner"></a>Partitioner</h4><p>​    MapReduce的使用者通常会指定Reduce任务和Reduce任务输出文件的数量（R）。<br>​    用户在中间key上使用分区函数来对数据进行分区，之后在输入到后续任务执行进程。一个默认的分区函数式使用hash方法（比如常见的：hash(key) mod R）进行分区。hash方法能够产生非常平衡的分区。</p>
+<p>分区Partitioner主要作用在于以下两点</p>
+<ol>
+<li>根据业务需要，产生多个输出文件</li>
+<li>多个reduce任务并发运行，提高整体job的运行效率</li>
+</ol>
+<h3 id="Shuffling"><a href="#Shuffling" class="headerlink" title="Shuffling"></a>Shuffling</h3><h4 id="shuffle的定义"><a href="#shuffle的定义" class="headerlink" title="shuffle的定义"></a>shuffle的定义</h4><p>在《Hadoop权威指南》中，对Shuffle的解释如下：</p>
+<blockquote>
+<p>MapReduce makes the guarantee that the input to every reducer is sorted by key. The process by which the system performs the sort—and transfers the map outputs to the reducers as inputs—is known as the shuffle. </p>
+</blockquote>
+<p>​    MapReduce保证每一个reducer的输入<strong>都是已经按照key拍过序的</strong>。这个<u>由系统执行的将mapper的输出排序后传输到reducer作为其输入的过程</u>称为shuffle（洗牌）。<br>​    从定义可以看出，sort这个动作发生在shuffle这个阶段。<br>​    这个过程有<strong>排序</strong>，也有<strong>复制</strong>。</p>
+<p>shuffle和sort在mr过程中的体现如下图：<br><img src="/2017/08/15/hadoopMRAdv/shufflingAndSort.png" alt=""><br>输入，map，分区，排序，分组，存到磁盘<br>fetch，sort，combine，reduce    </p>
+<h4 id="Shuffle中的Map端："><a href="#Shuffle中的Map端：" class="headerlink" title="Shuffle中的Map端："></a>Shuffle中的Map端：</h4><p><img src="/2017/08/15/hadoopMRAdv/mapInShuffle.png" alt=""><br>对上图的解释如下：<br>​    在map端，先是InputSplit，在InputSplit中含有DataNode中的数据，每 个InputSplit都会分配一个Mapper任务，Mapper任务结束后产 <k2，v2>的输出， <strong>这些输出先存放在缓存中</strong>，每个map有 个环形内存缓冲区， 于存储任务的 输出。默认为100MB(io.sort.mb属性)， 旦达到阀值0.8(<code>io.sort.spill.percent</code>)， 一个后台线程就把内容写到(spill)Linux<strong>本地磁盘</strong>中的指定目录(mapred.local.dir)下的新建的一个溢出写文件。<br>​    写磁盘前，<strong>要进 partition、sort和combine等操作</strong>。通过分区，将同类型的数据分开处 ，之后对同分区的数据进行排序，如果有Combiner，还要对排序后的数据进 combine。等最后记录写完，将全部溢出 件合并为 个分区且 排序的 件<br>最后将磁盘中的数据送到Reduce中，图中Map输出有三个分区，有一个分区数据被送到图示的Reduce任务中，剩下的两个分区被送到其他Reducer任务中。  图示的Reducer任务的其他的三个输 则来其他节点的Map输出。</k2，v2></p>
+<p>一些要点：</p>
+<ol>
+<li>map的输出存在一个环形内存缓冲区，内容超过80%的时候，内存的内容会被<strong>新开的线程</strong>写入到HDFS；</li>
+<li>线程根据数据最终被送到的recuder，将<strong>数据划分为相应的分区</strong>；</li>
+<li>在每个分区中，后台线程按照key进行内排序，此时若是有一个combiner，combiner将基于排序后的输出来运行。也就是说在溢写文件被写入到磁盘<strong>之前</strong>运行了combiner；</li>
+<li>一个map有可能会产生若干个溢写文件（spill file），最终溢写文件会被<strong>合并</strong>成一个<strong>已分区</strong>且<strong>已排序</strong>的文件。</li>
+<li>map的输出文件位于其tasktracker的<strong>本地磁盘</strong>。</li>
+</ol>
+<p>​    </p>
+<h4 id="Shuffle中的Reduce端"><a href="#Shuffle中的Reduce端" class="headerlink" title="Shuffle中的Reduce端"></a>Shuffle中的Reduce端</h4><p><img src="/2017/08/15/hadoopMRAdv/ReduceInShuffle.tiff" alt=""><br>​    Copy阶段:Reducer通过Http式得到输出文件的分区。reduce端可能从n个map的结果中获取数据， 这些map的执行速度不尽相同， 当其中一个map运行结束时，reduce就会从JobTracker中获取该信息。map运行结束后TaskTracker会得到消息，进而将消息汇报给JobTracker，reduce定时从 JobTracker获取该信息，reduce端默认有5个数据复制线程从map端复制数据；<br>​    Merge阶段:如果形成多个磁盘文件会进行合并。从map端复制来的数据 先写到reduce端的<strong>缓存</strong>中，同样缓存占用<strong>到达一定阈值后会将数据写到磁盘中</strong>，<strong>同样会进 partition、combine、排序等过程</strong>。如果形成多个磁盘 文件还会进行合并，<strong>最后一次合并的结果</strong>作为reduce的输入而不是写到磁盘中；</p>
+<p>一些要点：</p>
+<ol>
+<li>只要有一个map任务完成了，reduce任务就开始复制该map的输出</li>
+<li>reducer通过<strong>HTTP</strong>得到输出文件的<strong>分区</strong>。</li>
+<li>在将数据从内存存到磁盘中这个过程，就可以使用各种<strong>压缩</strong>算法了；</li>
+</ol>
+<h4 id="Shuffle过程中需要注意的以下点"><a href="#Shuffle过程中需要注意的以下点" class="headerlink" title="Shuffle过程中需要注意的以下点"></a>Shuffle过程中需要注意的以下点</h4><p>Shuffle同时涉及到Map和Reduce两端。<br>在Map端，map的所处的节点上，会有一个partition，combine，sort的操作；<br>在Reduce端，同样会有partition，combine，sort的操作，不过这次发生在分布式文件系统上；</p>
+<h3 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h3><p><img src="/2017/08/15/hadoopMRAdv/reduce.png" alt=""><br>此处主要是对受到的的<k2,v2>执行程序员编写的reduce方法。</k2,v2></p>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/15/hadoopMRAdv/" data-id="cj6dixftm000ginjos1pc6xsc" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MapReduce/">MapReduce</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-wordcount" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/15/wordcount/">wordcount的编写</a>
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/15/wordcount/" class="article-date"><time datetime="2017-08-15T11:29:34.000Z" itemprop="datePublished">2017-08-15</time></a>
+</div>
+
+    
+    
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在Eclipse创建MapReduce项目，新建一个MyWordCount类。</p>
+<p>编写代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">package</span> test;</div><div class="line"></div><div class="line"><span class="keyword">import</span> java.io.IOException;</div><div class="line"><span class="keyword">import</span> java.net.URI;</div><div class="line"><span class="keyword">import</span> java.util.Iterator;</div><div class="line"></div><div class="line"><span class="keyword">import</span> org.apache.hadoop.conf.Configuration;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.fs.FileSystem;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.fs.Path;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.io.IntWritable;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.io.LongWritable;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.io.Text;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Job;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Mapper;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.Reducer;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</div><div class="line"><span class="keyword">import</span> org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyWordCount</span> </span>&#123;</div><div class="line">	</div><div class="line">		<span class="keyword">private</span> <span class="keyword">static</span>  String INPUT_PATH = <span class="string">"hdfs://192.168.178.128:9000/input/words.txt"</span>;</div><div class="line">		<span class="keyword">private</span> <span class="keyword">static</span>  String OUTPUT_PATH = <span class="string">"hdfs://192.168.178.128:9000/output01"</span>;</div><div class="line">	</div><div class="line">		<span class="comment">// mapper</span></div><div class="line">		<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyMapper</span> <span class="keyword">extends</span> <span class="title">Mapper</span>&lt;<span class="title">LongWritable</span>, <span class="title">Text</span>, <span class="title">Text</span>, <span class="title">IntWritable</span>&gt;</span>&#123;</div><div class="line">			</div><div class="line">			<span class="meta">@Override</span></div><div class="line">			<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">map</span><span class="params">(LongWritable key, // offset 偏移量</span></span></div><div class="line"><span class="function"><span class="params">					Text value,</span></span></div><div class="line"><span class="function"><span class="params">					Context context)</span></span></div><div class="line"><span class="function">							<span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</div><div class="line">				<span class="comment">//map处理开始</span></div><div class="line">				<span class="comment">//切词</span></div><div class="line">				String[] lines = value.toString().split(<span class="string">"\\s+"</span>);</div><div class="line">				<span class="comment">// 举个例子：line x: hello world</span></div><div class="line">				<span class="comment">// 得到的结果就是: (hello,1) (world,1) ，分别写入到context中</span></div><div class="line">				<span class="keyword">for</span> (String word : lines) &#123;</div><div class="line">					context.write(<span class="keyword">new</span> Text(word), <span class="keyword">new</span> IntWritable(<span class="number">1</span>));</div><div class="line">				&#125;</div><div class="line">				System.out.println(<span class="string">"mapping......"</span>);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		</div><div class="line">		</div><div class="line">		<span class="comment">//reducer</span></div><div class="line">		<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyReducer</span> <span class="keyword">extends</span> <span class="title">Reducer</span>&lt;<span class="title">Text</span>,<span class="title">IntWritable</span>,<span class="title">Text</span>,<span class="title">IntWritable</span>&gt;</span>&#123;</div><div class="line">			</div><div class="line">			<span class="meta">@Override</span></div><div class="line">			<span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">reduce</span><span class="params">(Text key, // map -&gt; sort part -&gt; reduce</span></span></div><div class="line"><span class="function"><span class="params">					Iterable&lt;IntWritable&gt; value,</span></span></div><div class="line"><span class="function"><span class="params">					Context context)</span></span></div><div class="line"><span class="function">							<span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</div><div class="line">				</div><div class="line">				<span class="comment">// reducer得到的key是唯一的</span></div><div class="line">				<span class="comment">// 此处举个例子， 该reducer处理的key是 hello</span></div><div class="line">				<span class="comment">// 目前有的键值对有 hello 1 </span></div><div class="line">				<span class="comment">// 				hello 1</span></div><div class="line">				<span class="comment">// 				hello 1</span></div><div class="line">				<span class="comment">//得到的结果将会是 hello 3</span></div><div class="line">				<span class="keyword">int</span> sum = <span class="number">0</span>;</div><div class="line">				Iterator&lt;IntWritable&gt; it = value.iterator();</div><div class="line">				<span class="keyword">while</span>(it.hasNext())&#123;</div><div class="line">					sum += it.next().get();</div><div class="line">				&#125;</div><div class="line"> 				</div><div class="line">				<span class="comment">//将结果写入到context</span></div><div class="line">				context.write(key, <span class="keyword">new</span> IntWritable(sum));	</div><div class="line">				System.out.println(<span class="string">"reducing......"</span>);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		</div><div class="line">		</div><div class="line">		</div><div class="line">		</div><div class="line"></div><div class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</div><div class="line">			</div><div class="line">			<span class="comment">// 作业前的准备</span></div><div class="line">			Configuration conf = <span class="keyword">new</span> Configuration();</div><div class="line">			FileSystem fs = FileSystem.get(URI.create(OUTPUT_PATH),conf);</div><div class="line">			<span class="comment">// 检查目录是否存在，是则但删除之</span></div><div class="line">			<span class="keyword">if</span>(fs.exists(<span class="keyword">new</span> Path(OUTPUT_PATH)))&#123;</div><div class="line">				fs.delete(<span class="keyword">new</span> Path(OUTPUT_PATH));</div><div class="line">			&#125;</div><div class="line">				</div><div class="line">			</div><div class="line">			<span class="comment">//第一步，创建Job</span></div><div class="line">			Job job = <span class="keyword">new</span> Job(conf,<span class="string">"myjob"</span>);</div><div class="line">			</div><div class="line">			<span class="comment">//设置Job,mapper,reducer,combiner(optional)</span></div><div class="line">			job.setJarByClass(MyWordCount.class);</div><div class="line">			job.setMapperClass(MyMapper.class);</div><div class="line">			job.setReducerClass(MyReducer.class);</div><div class="line">			job.setCombinerClass(MyReducer.class);</div><div class="line">			</div><div class="line">			</div><div class="line">			<span class="comment">//设置Output类型</span></div><div class="line">			job.setOutputKeyClass(Text.class);</div><div class="line">			job.setOutputValueClass(IntWritable.class);</div><div class="line">			</div><div class="line">			FileInputFormat.addInputPath(job,<span class="keyword">new</span> Path(INPUT_PATH));</div><div class="line">			FileOutputFormat.setOutputPath(job, <span class="keyword">new</span> Path(OUTPUT_PATH));</div><div class="line">			</div><div class="line">			<span class="comment">//最后一步</span></div><div class="line">			job.waitForCompletion(<span class="keyword">true</span>);</div><div class="line">			</div><div class="line">		&#125;</div><div class="line">		</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行输出如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div></pre></td><td class="code"><pre><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">34</span> WARN util.NativeCodeLoader: Unable to load <span class="keyword">native</span>-hadoop library <span class="keyword">for</span> your platform... using builtin-java classes where applicable</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">35</span> INFO Configuration.deprecation: session.id is deprecated. Instead, use dfs.metrics.session-id</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">35</span> INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">36</span> WARN mapreduce.JobSubmitter: Hadoop command-line option parsing not performed. Implement the Tool <span class="class"><span class="keyword">interface</span> <span class="title">and</span> <span class="title">execute</span> <span class="title">your</span> <span class="title">application</span> <span class="title">with</span> <span class="title">ToolRunner</span> <span class="title">to</span> <span class="title">remedy</span> <span class="title">this</span>.</span></div><div class="line">17/08/15 19:37:36 WARN mapreduce.JobSubmitter: No job jar file set.  User classes may not be found. See Job or Job#setJar(String).</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">36</span> INFO input.FileInputFormat: Total input paths to process : <span class="number">1</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">36</span> INFO mapreduce.JobSubmitter: number of splits:<span class="number">1</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">36</span> INFO mapreduce.JobSubmitter: Submitting tokens <span class="keyword">for</span> job: job_local484001035_0001</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapreduce.Job: The url to track the job: http:<span class="comment">//localhost:8080/</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapreduce.Job: Running job: job_local484001035_0001</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.LocalJobRunner: OutputCommitter set in config <span class="keyword">null</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.LocalJobRunner: OutputCommitter is org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.LocalJobRunner: Waiting <span class="keyword">for</span> map tasks</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.LocalJobRunner: Starting task: attempt_local484001035_0001_m_000000_0</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO util.ProcfsBasedProcessTree: ProcfsBasedProcessTree currently is supported only on Linux.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.Task:  Using ResourceCalculatorProcessTree : <span class="keyword">null</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: Processing split: hdfs:<span class="comment">//192.168.178.128:9000/input/words.txt:0+86</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: (EQUATOR) <span class="number">0</span> kvi <span class="number">26214396</span>(<span class="number">104857584</span>)</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: mapreduce.task.io.sort.mb: <span class="number">100</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: soft limit at <span class="number">83886080</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: bufstart = <span class="number">0</span>; bufvoid = <span class="number">104857600</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: kvstart = <span class="number">26214396</span>; length = <span class="number">6553600</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">37</span> INFO mapred.MapTask: Map output collector <span class="class"><span class="keyword">class</span> </span>= org.apache.hadoop.mapred.MapTask$MapOutputBuffer</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapreduce.Job: Job job_local484001035_0001 running in uber mode : <span class="keyword">false</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapreduce.Job:  map <span class="number">0</span>% reduce <span class="number">0</span>%</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line">mapping......</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: </div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.MapTask: Starting flush of map output</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.MapTask: Spilling map output</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.MapTask: bufstart = <span class="number">0</span>; bufend = <span class="number">134</span>; bufvoid = <span class="number">104857600</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.MapTask: kvstart = <span class="number">26214396</span>(<span class="number">104857584</span>); kvend = <span class="number">26214352</span>(<span class="number">104857408</span>); length = <span class="number">45</span>/<span class="number">6553600</span></div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.MapTask: Finished spill <span class="number">0</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Task: Task:attempt_local484001035_0001_m_000000_0 is done. And is in the process of committing</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: map</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Task: Task <span class="string">'attempt_local484001035_0001_m_000000_0'</span> done.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: Finishing task: attempt_local484001035_0001_m_000000_0</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: map task executor complete.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: Waiting <span class="keyword">for</span> reduce tasks</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: Starting task: attempt_local484001035_0001_r_000000_0</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO util.ProcfsBasedProcessTree: ProcfsBasedProcessTree currently is supported only on Linux.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Task:  Using ResourceCalculatorProcessTree : <span class="keyword">null</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.ReduceTask: Using ShuffleConsumerPlugin: org.apache.hadoop.mapreduce.task.reduce.Shuffle@<span class="number">2</span>ae4ec62</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: MergerManager: memoryLimit=<span class="number">1336252800</span>, maxSingleShuffleLimit=<span class="number">334063200</span>, mergeThreshold=<span class="number">881926912</span>, ioSortFactor=<span class="number">10</span>, memToMemMergeOutputsThreshold=<span class="number">10</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.EventFetcher: attempt_local484001035_0001_r_000000_0 Thread started: EventFetcher <span class="keyword">for</span> fetching Map Completion Events</div><div class="line">17/08/15 19:37:38 INFO reduce.LocalFetcher: localfetcher#1 about to shuffle output of map attempt_local484001035_0001_m_000000_0 decomp: 95 len: 99 to MEMORY</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.InMemoryMapOutput: Read <span class="number">95</span> bytes from map-output <span class="keyword">for</span> attempt_local484001035_0001_m_000000_0</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: closeInMemoryFile -&gt; map-output of size: <span class="number">95</span>, inMemoryMapOutputs.size() -&gt; <span class="number">1</span>, commitMemory -&gt; <span class="number">0</span>, usedMemory -&gt;<span class="number">95</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.EventFetcher: EventFetcher is interrupted.. Returning</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: <span class="number">1</span> / <span class="number">1</span> copied.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: finalMerge called with <span class="number">1</span> in-memory map-outputs and <span class="number">0</span> on-disk map-outputs</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Merger: Merging <span class="number">1</span> sorted segments</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Merger: Down to the last merge-pass, with <span class="number">1</span> segments left of total size: <span class="number">88</span> bytes</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: Merged <span class="number">1</span> segments, <span class="number">95</span> bytes to disk to satisfy reduce memory limit</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: Merging <span class="number">1</span> files, <span class="number">99</span> bytes from disk</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO reduce.MergeManagerImpl: Merging <span class="number">0</span> segments, <span class="number">0</span> bytes from memory into reduce</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Merger: Merging <span class="number">1</span> sorted segments</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.Merger: Down to the last merge-pass, with <span class="number">1</span> segments left of total size: <span class="number">88</span> bytes</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO mapred.LocalJobRunner: <span class="number">1</span> / <span class="number">1</span> copied.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">38</span> INFO Configuration.deprecation: mapred.skip.on is deprecated. Instead, use mapreduce.job.skiprecords</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line">reducing......</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapreduce.Job:  map <span class="number">100</span>% reduce <span class="number">0</span>%</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.Task: Task:attempt_local484001035_0001_r_000000_0 is done. And is in the process of committing</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.LocalJobRunner: <span class="number">1</span> / <span class="number">1</span> copied.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.Task: Task attempt_local484001035_0001_r_000000_0 is allowed to commit now</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO output.FileOutputCommitter: Saved output of task <span class="string">'attempt_local484001035_0001_r_000000_0'</span> to hdfs:<span class="comment">//192.168.178.128:9000/output01/_temporary/0/task_local484001035_0001_r_000000</span></div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.LocalJobRunner: reduce &gt; reduce</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.Task: Task <span class="string">'attempt_local484001035_0001_r_000000_0'</span> done.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.LocalJobRunner: Finishing task: attempt_local484001035_0001_r_000000_0</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">39</span> INFO mapred.LocalJobRunner: reduce task executor complete.</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">40</span> INFO mapreduce.Job:  map <span class="number">100</span>% reduce <span class="number">100</span>%</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">40</span> INFO mapreduce.Job: Job job_local484001035_0001 completed successfully</div><div class="line"><span class="number">17</span>/<span class="number">08</span>/<span class="number">15</span> <span class="number">19</span>:<span class="number">37</span>:<span class="number">40</span> INFO mapreduce.Job: Counters: <span class="number">35</span></div><div class="line">	File System Counters</div><div class="line">		FILE: Number of bytes read=<span class="number">562</span></div><div class="line">		FILE: Number of bytes written=<span class="number">491225</span></div><div class="line">		FILE: Number of read operations=<span class="number">0</span></div><div class="line">		FILE: Number of large read operations=<span class="number">0</span></div><div class="line">		FILE: Number of write operations=<span class="number">0</span></div><div class="line">		HDFS: Number of bytes read=<span class="number">172</span></div><div class="line">		HDFS: Number of bytes written=<span class="number">65</span></div><div class="line">		HDFS: Number of read operations=<span class="number">15</span></div><div class="line">		HDFS: Number of large read operations=<span class="number">0</span></div><div class="line">		HDFS: Number of write operations=<span class="number">6</span></div><div class="line">	Map-Reduce Framework</div><div class="line">		Map input records=<span class="number">7</span></div><div class="line">		Map output records=<span class="number">12</span></div><div class="line">		Map output bytes=<span class="number">134</span></div><div class="line">		Map output materialized bytes=<span class="number">99</span></div><div class="line">		Input split bytes=<span class="number">108</span></div><div class="line">		Combine input records=<span class="number">12</span></div><div class="line">		Combine output records=<span class="number">7</span></div><div class="line">		Reduce input groups=<span class="number">7</span></div><div class="line">		Reduce shuffle bytes=<span class="number">99</span></div><div class="line">		Reduce input records=<span class="number">7</span></div><div class="line">		Reduce output records=<span class="number">7</span></div><div class="line">		Spilled Records=<span class="number">14</span></div><div class="line">		Shuffled Maps =<span class="number">1</span></div><div class="line">		Failed Shuffles=<span class="number">0</span></div><div class="line">		Merged Map outputs=<span class="number">1</span></div><div class="line">		<span class="function">GC time <span class="title">elapsed</span> <span class="params">(ms)</span></span>=<span class="number">0</span></div><div class="line">		<span class="function">Total committed heap <span class="title">usage</span> <span class="params">(bytes)</span></span>=<span class="number">475004928</span></div><div class="line">	Shuffle Errors</div><div class="line">		BAD_ID=<span class="number">0</span></div><div class="line">		CONNECTION=<span class="number">0</span></div><div class="line">		IO_ERROR=<span class="number">0</span></div><div class="line">		WRONG_LENGTH=<span class="number">0</span></div><div class="line">		WRONG_MAP=<span class="number">0</span></div><div class="line">		WRONG_REDUCE=<span class="number">0</span></div><div class="line">	File Input Format Counters </div><div class="line">		Bytes Read=<span class="number">86</span></div><div class="line">	File Output Format Counters </div><div class="line">		Bytes Written=<span class="number">65</span></div></pre></td></tr></table></figure>
+<p>输入文件如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">hello liuchengwu</div><div class="line">hello liulao</div><div class="line">hello dora</div><div class="line">hello liu</div><div class="line">hello hadoop</div><div class="line">helloWorld</div><div class="line">helloWorld</div></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">dora	1</div><div class="line">hadoop	1</div><div class="line">hello	5</div><div class="line">helloWorld	2</div><div class="line">liu	1</div><div class="line">liuchengwu	1</div><div class="line">liulao	1</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/15/wordcount/" data-id="cj6dizlfo0000itjoqltt16ta" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MapReduce/">MapReduce</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/代码/">代码</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-Hadoop-MapReduce" class="article article-type-post" itemscope itemprop="blogPost">
 
   <header class="article-header">
@@ -153,7 +331,7 @@
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/14/Hadoop-MapReduce/" data-id="cj6c9rzsa00058ijokwdhfisl" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/14/Hadoop-MapReduce/" data-id="cj6dixftc0009injo2rvpcwdw" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -345,7 +523,7 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/11/0811JavaHadoop/" data-id="cj6c9rzry00048ijo81sb4vqn" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/11/0811JavaHadoop/" data-id="cj6dixft10004injoujruvqzv" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -461,7 +639,89 @@ IOUtils是一个I/O帮助类,提供的都是静态方法,不需要实例化。
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj6c9rzrr00018ijo13l0fs2h" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/11/0811HadoopIO/" data-id="cj6dixft60005injo3sxajymz" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HDFS/">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-0810HDFSreadwrite" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/10/0810HDFSreadwrite/" class="article-date"><time datetime="2017-08-10T13:29:25.000Z" itemprop="datePublished">2017-08-10</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>​    向HDFS读写数据的过程中涉及到以下几个部分：</p>
+<ol>
+<li>客户端节点</li>
+<li>客户端节点上的JVM</li>
+<li>数据节点</li>
+<li>名称节点</li>
+</ol>
+<h2 id="从HDFS读取数据"><a href="#从HDFS读取数据" class="headerlink" title="从HDFS读取数据"></a>从HDFS读取数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_reading_data_from_HDFS.png" alt=""><br>​<br>流程如下：</p>
+<ol>
+<li>客户端回调用FileSystem的实例<code>DistributedFileSystem</code>的open方法，获得这个文件的<strong>输入流</strong>；</li>
+<li>以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序），</li>
+<li>客户端按照就近原则，调用输入流的read方法从最近的DataNode读取数据， 若客户端本身就是一个数据节点，则直接从节点上读取（期间将操作日志发送给NameNode）；</li>
+<li>客户端读取到数据块末端，将关闭与这个DataNode 的连接，然后<strong>重新查找</strong>下一个数据块。</li>
+<li>重复2-4直到当客户端读取完成，<code>DFSInputStream</code>将被关闭；</li>
+</ol>
+<h2 id="向HDFS写数据"><a href="#向HDFS写数据" class="headerlink" title="向HDFS写数据"></a>向HDFS写数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_writing_data_to_HDFS.png" alt=""></p>
+<ol>
+<li>客户端通过在<code>DistributedFileSystem</code>调用<code>create</code>方法来创建文件；</li>
+<li><code>DistributedFileSystem</code>的一个RPC调用NameNode，在文件系统的密码<strong>命名空间</strong>中创建一个新文件；NameNode 将通过一些检查，比如 ~文件是否存在~，客户端 ~是否拥有创建权限~ 等;通过检查之后，在NameNode 添加文件信息。注意，因为此时文件没有数据，所以<strong>NameNode 上也没有文件数据块的信息</strong>。</li>
+<li>创建结束之后，HDFS会返回一个输出流 DFSDataOutputStream 给客户端；</li>
+<li>客户端调用输出流DFSDataOutputStream的write方法向HDFS 中对应的文件写入数据。</li>
+<li>数据首先会被<strong>分包</strong>，这些分包会写人一个<strong>输出流的内部队列</strong> Data 队列中， ~接收完数据分包，输出流DFSDataOutputStream会向NameNode申请保存文件和副本数据块的若干个DataNode ， 这若干个DataNode 会形成一个数据传输管道。~ DFSDataOutputStream 将数据传输给距离上最短的DataNode ，这个DataNode 接收到数据包之后会传给下一个DataNode 。 ~数据在各DataNode之间通过管道流动，而不是全部由输出流分发~， 以减少传输开销。</li>
+<li>因为各DataNode位于不同机器上，数据需要通过网络发送，所以，为了保证所有DataNode 的数据都是准确的， ~接收到数据的 DataNode 要向<strong>发送者</strong>发送确认包(ACK Packet )~ 。对于某个数据块，只有当DFSDataOutputStream 收到了所有DataNode 的正确ACK，才能确认传输结束。DFSDataOutputStream 内部专 门维护了一个<strong>等待ACK 队列</strong>，这一队列保存已经进入管道传输数据、但是并未被完全确认的数据包。</li>
+<li>重复4-6，DFSDataInputStream 继续等待直到所有数据写入完毕并<strong>被确认</strong>后，调用<code>close</code>关闭流，调用<code>complete</code>方法通知NameNode 文件写入完成。NameNode 接收到complete消息之后， ~等待相应数量的副本写入完毕后~， 告知客户端。</li>
+</ol>
+<p><em>数据流列表形成一个管线。</em><br><em>一个包只有在被管线中的<strong>所有节点</strong>确认后才会被移出确认队列</em></p>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj6dixfsr0000injob1shso3u" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -565,89 +825,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj6c9rzrm00008ijo7ifmp4z2" class="article-share-link">
-        <i class="fa fa-share"></i> Share
-      </a>
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HDFS/">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
-
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-0810HDFSreadwrite" class="article article-type-post" itemscope itemprop="blogPost">
-
-  <header class="article-header">
-    
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
-    </h1>
-  
-
-
-  </header>
-
-  <div class="article-meta">
-    <div class="article-datetime">
-  <a href="/2017/08/10/0810HDFSreadwrite/" class="article-date"><time datetime="2017-08-10T13:29:25.000Z" itemprop="datePublished">2017-08-10</time></a>
-</div>
-
-    
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/大数据/">大数据</a>
-  </div>
-
-
-  </div>
-  <div class="article-inner">
-
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>​    向HDFS读写数据的过程中涉及到以下几个部分：</p>
-<ol>
-<li>客户端节点</li>
-<li>客户端节点上的JVM</li>
-<li>数据节点</li>
-<li>名称节点</li>
-</ol>
-<h2 id="从HDFS读取数据"><a href="#从HDFS读取数据" class="headerlink" title="从HDFS读取数据"></a>从HDFS读取数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_reading_data_from_HDFS.png" alt=""><br>​<br>流程如下：</p>
-<ol>
-<li>客户端回调用FileSystem的实例<code>DistributedFileSystem</code>的open方法，获得这个文件的<strong>输入流</strong>；</li>
-<li>以RPC的方式调用名称节点，以确定文件开头部分块的位置（包括副本的位置，按照与客户端的距离来排序），</li>
-<li>客户端按照就近原则，调用输入流的read方法从最近的DataNode读取数据， 若客户端本身就是一个数据节点，则直接从节点上读取（期间将操作日志发送给NameNode）；</li>
-<li>客户端读取到数据块末端，将关闭与这个DataNode 的连接，然后<strong>重新查找</strong>下一个数据块。</li>
-<li>重复2-4直到当客户端读取完成，<code>DFSInputStream</code>将被关闭；</li>
-</ol>
-<h2 id="向HDFS写数据"><a href="#向HDFS写数据" class="headerlink" title="向HDFS写数据"></a>向HDFS写数据</h2><p><img src="/2017/08/10/0810HDFSreadwrite/a_client_writing_data_to_HDFS.png" alt=""></p>
-<ol>
-<li>客户端通过在<code>DistributedFileSystem</code>调用<code>create</code>方法来创建文件；</li>
-<li><code>DistributedFileSystem</code>的一个RPC调用NameNode，在文件系统的密码<strong>命名空间</strong>中创建一个新文件；NameNode 将通过一些检查，比如 ~文件是否存在~，客户端 ~是否拥有创建权限~ 等;通过检查之后，在NameNode 添加文件信息。注意，因为此时文件没有数据，所以<strong>NameNode 上也没有文件数据块的信息</strong>。</li>
-<li>创建结束之后，HDFS会返回一个输出流 DFSDataOutputStream 给客户端；</li>
-<li>客户端调用输出流DFSDataOutputStream的write方法向HDFS 中对应的文件写入数据。</li>
-<li>数据首先会被<strong>分包</strong>，这些分包会写人一个<strong>输出流的内部队列</strong> Data 队列中， ~接收完数据分包，输出流DFSDataOutputStream会向NameNode申请保存文件和副本数据块的若干个DataNode ， 这若干个DataNode 会形成一个数据传输管道。~ DFSDataOutputStream 将数据传输给距离上最短的DataNode ，这个DataNode 接收到数据包之后会传给下一个DataNode 。 ~数据在各DataNode之间通过管道流动，而不是全部由输出流分发~， 以减少传输开销。</li>
-<li>因为各DataNode位于不同机器上，数据需要通过网络发送，所以，为了保证所有DataNode 的数据都是准确的， ~接收到数据的 DataNode 要向<strong>发送者</strong>发送确认包(ACK Packet )~ 。对于某个数据块，只有当DFSDataOutputStream 收到了所有DataNode 的正确ACK，才能确认传输结束。DFSDataOutputStream 内部专 门维护了一个<strong>等待ACK 队列</strong>，这一队列保存已经进入管道传输数据、但是并未被完全确认的数据包。</li>
-<li>重复4-6，DFSDataInputStream 继续等待直到所有数据写入完毕并<strong>被确认</strong>后，调用<code>close</code>关闭流，调用<code>complete</code>方法通知NameNode 文件写入完成。NameNode 接收到complete消息之后， ~等待相应数量的副本写入完毕后~， 告知客户端。</li>
-</ol>
-<p><em>数据流列表形成一个管线。</em><br><em>一个包只有在被管线中的<strong>所有节点</strong>确认后才会被移出确认队列</em></p>
-
-      
-    </div>
-
-    
-      
-
-    
-
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/10/0810HDFSreadwrite/" data-id="cj6c9rzsi00098ijot4874pf7" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/10/0810HDFoverview/" data-id="cj6dixfsw0001injon2pb58s4" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -709,7 +887,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj6c9rzt4000z8ijopx0sp2a1" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/cap/" data-id="cj6dixft90006injohrrxo2ib" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -849,7 +1027,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
     
 
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj6c9rzse00068ijowz1rd00s" class="article-share-link">
+      <a data-url="http://yoursite.com/2017/08/07/test/" data-id="cj6dixfti000cinjox62qcu82" class="article-share-link">
         <i class="fa fa-share"></i> Share
       </a>
       
@@ -882,7 +1060,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Categories</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">7</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">8</span></li></ul>
   </div>
 
 
@@ -890,7 +1068,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Tags</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/MapReduce/">MapReduce</a><span class="sidebar-module-list-count">1</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">7</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/MapReduce/">MapReduce</a><span class="sidebar-module-list-count">3</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/代码/">代码</a><span class="sidebar-module-list-count">1</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">9</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
   </div>
 
 
@@ -899,7 +1077,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   <div class="sidebar-module">
     <h4>Tag Cloud</h4>
     <p class="tagcloud">
-      <a href="/tags/HDFS/" style="font-size: 15px;">HDFS</a> <a href="/tags/MapReduce/" style="font-size: 10px;">MapReduce</a> <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
+      <a href="/tags/HDFS/" style="font-size: 16.67px;">HDFS</a> <a href="/tags/MapReduce/" style="font-size: 13.33px;">MapReduce</a> <a href="/tags/代码/" style="font-size: 10px;">代码</a> <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
     </p>
   </div>
 
@@ -907,7 +1085,7 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   
   <div class="sidebar-module">
     <h4>Archives</h4>
-    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">7</span></li></ul>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">9</span></li></ul>
   </div>
 
 
@@ -916,6 +1094,14 @@ HDFS在Hadoop框架中所处的位置如下图所示：
   <div class="sidebar-module">
     <h4>Recents</h4>
     <ul class="sidebar-module-list">
+      
+        <li>
+          <a href="/2017/08/15/hadoopMRAdv/">hadoop高级</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/15/wordcount/">wordcount的编写</a>
+        </li>
       
         <li>
           <a href="/2017/08/14/Hadoop-MapReduce/">Hadoop_MapReduce</a>
@@ -927,14 +1113,6 @@ HDFS在Hadoop框架中所处的位置如下图所示：
       
         <li>
           <a href="/2017/08/11/0811HadoopIO/">Hadoop IO操作</a>
-        </li>
-      
-        <li>
-          <a href="/2017/08/10/0810HDFoverview/">HDFS简述</a>
-        </li>
-      
-        <li>
-          <a href="/2017/08/10/0810HDFSreadwrite/">HDFS的读写策略</a>
         </li>
       
     </ul>

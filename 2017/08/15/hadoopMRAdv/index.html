@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>hadoop高级 | HWHuang的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="MapReduce的具体过程​    MapReduce的工作流程涉及到5个小流程：input，splitting，mapping，shuffling，reducing。如下图所示： Splitting​    在这个过程主要涉及到两个类InputFormat和InputSplit。 InputFormat​    通过使用InputFormat，MapReduce框架可以做到：  验证作业的输入">
+<meta name="keywords" content="分布式系统,MapReduce">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hadoop高级">
+<meta property="og:url" content="http://yoursite.com/2017/08/15/hadoopMRAdv/index.html">
+<meta property="og:site_name" content="HWHuang的博客">
+<meta property="og:description" content="MapReduce的具体过程​    MapReduce的工作流程涉及到5个小流程：input，splitting，mapping，shuffling，reducing。如下图所示： Splitting​    在这个过程主要涉及到两个类InputFormat和InputSplit。 InputFormat​    通过使用InputFormat，MapReduce框架可以做到：  验证作业的输入">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/MRProcess.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/mapstages.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/combiner.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/shufflingAndSort.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/mapInShuffle.png">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/ReduceInShuffle.tiff">
+<meta property="og:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/reduce.png">
+<meta property="og:updated_time" content="2017-08-15T11:50:12.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hadoop高级">
+<meta name="twitter:description" content="MapReduce的具体过程​    MapReduce的工作流程涉及到5个小流程：input，splitting，mapping，shuffling，reducing。如下图所示： Splitting​    在这个过程主要涉及到两个类InputFormat和InputSplit。 InputFormat​    通过使用InputFormat，MapReduce框架可以做到：  验证作业的输入">
+<meta name="twitter:image" content="http://yoursite.com/2017/08/15/hadoopMRAdv/MRProcess.tiff">
+  
+    <link rel="alternate" href="/atom.xml" title="HWHuang的博客" type="application/atom+xml">
+  
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" integrity="sha384-XdYbMnZ/QjLh6iI4ogqCTaIjrFk87ip+ekIjefZch0Y+PvJ8CDYtEs1ipDmPorQ+" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="/css/styles.css">
+  
+
+</head>
+
+<body>
+  <nav class="navbar navbar-inverse">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-menu-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="main-menu-navbar">
+      <ul class="nav navbar-nav">
+        
+          <li><a class=""
+                 href="/index.html">Home</a></li>
+        
+          <li><a class=""
+                 href="/archives/">Archives</a></li>
+        
+      </ul>
+
+      <!--
+      <ul class="nav navbar-nav navbar-right">
+        
+          <li><a href="/atom.xml" title="RSS Feed"><i class="fa fa-rss"></i></a></li>
+        
+      </ul>
+      -->
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+  <div class="container">
+    <div class="blog-header">
+  <h1 class="blog-title">HWHuang的博客</h1>
+  
+</div>
+
+    <div class="row">
+        <div class="col-sm-8 blog-main">
+          <article id="post-hadoopMRAdv" class="article article-type-post" itemscope itemprop="blogPost">
+
+  <header class="article-header">
+    
+  
+    <h1 class="article-title" itemprop="name">
+      hadoop高级
+    </h1>
+  
+
+
+  </header>
+
+  <div class="article-meta">
+    <div class="article-datetime">
+  <a href="/2017/08/15/hadoopMRAdv/" class="article-date"><time datetime="2017-08-15T11:39:30.000Z" itemprop="datePublished">2017-08-15</time></a>
+</div>
+
+    
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/大数据/">大数据</a>
+  </div>
+
+
+  </div>
+  <div class="article-inner">
+
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="MapReduce的具体过程"><a href="#MapReduce的具体过程" class="headerlink" title="MapReduce的具体过程"></a>MapReduce的具体过程</h2><p>​    MapReduce的工作流程涉及到5个小流程：input，splitting，<strong>mapping</strong>，shuffling，<strong>reducing</strong>。如下图所示：<br><img src="/2017/08/15/hadoopMRAdv/MRProcess.tiff" alt=""></p>
+<h3 id="Splitting"><a href="#Splitting" class="headerlink" title="Splitting"></a>Splitting</h3><p>​    在这个过程主要涉及到两个类<code>InputFormat</code>和<code>InputSplit</code>。</p>
+<h4 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h4><p>​    通过使用InputFormat，MapReduce框架可以做到：</p>
+<ol>
+<li>验证作业的输入的正确性；</li>
+<li>把<strong>输入文件</strong>切分成多个<strong>逻辑InputSplits</strong>，并把每一个InputSplit分别分发给一个<strong>单独的MapperTask</strong>；</li>
+<li><p>提供RecordReader的实现，这个RecordReader从指定的InputSplit中正确读出一条一条的Ｋ－Ｖ对，~这些 Ｋ－Ｖ对将由我们写的Mapper方法处理~ 。</p>
+<p>当数据传送给map时，map会将输入分片传送到InputFormat，InputFormat则调用方法<code>getRecordReader()</code>生成<code>RecordReader</code>，RecordReader再通过<code>creatKey()</code>、<code>creatValue()</code>方法创建可供map处理的一个一个的<key,value>对。简而言之，<code>InputFormat()</code>方法是用来<strong>生成可供map处理的<key,value>对</key,value></strong>的。</key,value></p>
+<p>默认使用的ITextInputFormat，在TextInputFormat中，每个文件（或其一部分）都会单独地作为map的输入，而这个是继承自FileInputFormat的。<br>之后，每行数据都会生成一条记录，每条记录则表示成<key,value>形式：</key,value></p>
+</li>
+</ol>
+<ul>
+<li>key值是每个数据的记录在数据分片中<strong>字节偏移量</strong>，数据类型LongWritable；</li>
+<li>value值是每行的内容，数据类型是Text。</li>
+</ul>
+<h4 id="关于inputSplit"><a href="#关于inputSplit" class="headerlink" title="关于inputSplit"></a>关于inputSplit</h4><p>​    任何分割操作的实现都继承自Apache抽象基类——InputSplit，它定义了分割的长度及位置。<br>​    InputSplit是hadoop定义的用来传送给每个单独的map的数据，InputSplit存储的<strong>并非数据本身</strong>，而是一个<strong>分片长度</strong>和一个<strong>记录数据位置的数组</strong>。生成InputSplit的方法可以通过InputFormat()来设置。</p>
+<p>参考：</p>
+<ol>
+<li><a href="http://blog.csdn.net/zolalad/article/details/12653093" target="_blank" rel="external">MapReduce中InputFormat和InputSplit解读 - zolalad的专栏        - CSDN博客</a></li>
+</ol>
+<h3 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h3><p><img src="/2017/08/15/hadoopMRAdv/mapstages.tiff" alt=""></p>
+<h4 id="Combiner"><a href="#Combiner" class="headerlink" title="Combiner"></a>Combiner</h4><p>​    每一个map都可能会产生大量的本地输出，Combiner的作用就是对map端 的输出先做一次合并，以减少在map和reduce节点之间的数据传输量， 以提高网络IO性能。</p>
+<p>​    Combiner的作用</p>
+<ol>
+<li>Combiner实现<strong>本地key</strong>的聚合，对map输出的key排序value进行迭代；</li>
+<li>Combiner还有本地reduce功能（其本质上就是一个reduce）</li>
+</ol>
+<p>Combiner作用图解：<br><img src="/2017/08/15/hadoopMRAdv/combiner.tiff" alt=""><br>可以看到，combiner是在分区之前开始工作的。</p>
+<p>​    Combiner的使用方法<br>在main方法里，使用一下方法指定某个job的combiner</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">job.setCombinerClass(MyReducer.class);</div></pre></td></tr></table></figure>
+<h4 id="Partitioner"><a href="#Partitioner" class="headerlink" title="Partitioner"></a>Partitioner</h4><p>​    MapReduce的使用者通常会指定Reduce任务和Reduce任务输出文件的数量（R）。<br>​    用户在中间key上使用分区函数来对数据进行分区，之后在输入到后续任务执行进程。一个默认的分区函数式使用hash方法（比如常见的：hash(key) mod R）进行分区。hash方法能够产生非常平衡的分区。</p>
+<p>分区Partitioner主要作用在于以下两点</p>
+<ol>
+<li>根据业务需要，产生多个输出文件</li>
+<li>多个reduce任务并发运行，提高整体job的运行效率</li>
+</ol>
+<h3 id="Shuffling"><a href="#Shuffling" class="headerlink" title="Shuffling"></a>Shuffling</h3><h4 id="shuffle的定义"><a href="#shuffle的定义" class="headerlink" title="shuffle的定义"></a>shuffle的定义</h4><p>在《Hadoop权威指南》中，对Shuffle的解释如下：</p>
+<blockquote>
+<p>MapReduce makes the guarantee that the input to every reducer is sorted by key. The process by which the system performs the sort—and transfers the map outputs to the reducers as inputs—is known as the shuffle. </p>
+</blockquote>
+<p>​    MapReduce保证每一个reducer的输入<strong>都是已经按照key拍过序的</strong>。这个<u>由系统执行的将mapper的输出排序后传输到reducer作为其输入的过程</u>称为shuffle（洗牌）。<br>​    从定义可以看出，sort这个动作发生在shuffle这个阶段。<br>​    这个过程有<strong>排序</strong>，也有<strong>复制</strong>。</p>
+<p>shuffle和sort在mr过程中的体现如下图：<br><img src="/2017/08/15/hadoopMRAdv/shufflingAndSort.png" alt=""><br>输入，map，分区，排序，分组，存到磁盘<br>fetch，sort，combine，reduce    </p>
+<h4 id="Shuffle中的Map端："><a href="#Shuffle中的Map端：" class="headerlink" title="Shuffle中的Map端："></a>Shuffle中的Map端：</h4><p><img src="/2017/08/15/hadoopMRAdv/mapInShuffle.png" alt=""><br>对上图的解释如下：<br>​    在map端，先是InputSplit，在InputSplit中含有DataNode中的数据，每 个InputSplit都会分配一个Mapper任务，Mapper任务结束后产 <k2，v2>的输出， <strong>这些输出先存放在缓存中</strong>，每个map有 个环形内存缓冲区， 于存储任务的 输出。默认为100MB(io.sort.mb属性)， 旦达到阀值0.8(<code>io.sort.spill.percent</code>)， 一个后台线程就把内容写到(spill)Linux<strong>本地磁盘</strong>中的指定目录(mapred.local.dir)下的新建的一个溢出写文件。<br>​    写磁盘前，<strong>要进 partition、sort和combine等操作</strong>。通过分区，将同类型的数据分开处 ，之后对同分区的数据进行排序，如果有Combiner，还要对排序后的数据进 combine。等最后记录写完，将全部溢出 件合并为 个分区且 排序的 件<br>最后将磁盘中的数据送到Reduce中，图中Map输出有三个分区，有一个分区数据被送到图示的Reduce任务中，剩下的两个分区被送到其他Reducer任务中。  图示的Reducer任务的其他的三个输 则来其他节点的Map输出。</k2，v2></p>
+<p>一些要点：</p>
+<ol>
+<li>map的输出存在一个环形内存缓冲区，内容超过80%的时候，内存的内容会被<strong>新开的线程</strong>写入到HDFS；</li>
+<li>线程根据数据最终被送到的recuder，将<strong>数据划分为相应的分区</strong>；</li>
+<li>在每个分区中，后台线程按照key进行内排序，此时若是有一个combiner，combiner将基于排序后的输出来运行。也就是说在溢写文件被写入到磁盘<strong>之前</strong>运行了combiner；</li>
+<li>一个map有可能会产生若干个溢写文件（spill file），最终溢写文件会被<strong>合并</strong>成一个<strong>已分区</strong>且<strong>已排序</strong>的文件。</li>
+<li>map的输出文件位于其tasktracker的<strong>本地磁盘</strong>。</li>
+</ol>
+<p>​    </p>
+<h4 id="Shuffle中的Reduce端"><a href="#Shuffle中的Reduce端" class="headerlink" title="Shuffle中的Reduce端"></a>Shuffle中的Reduce端</h4><p><img src="/2017/08/15/hadoopMRAdv/ReduceInShuffle.tiff" alt=""><br>​    Copy阶段:Reducer通过Http式得到输出文件的分区。reduce端可能从n个map的结果中获取数据， 这些map的执行速度不尽相同， 当其中一个map运行结束时，reduce就会从JobTracker中获取该信息。map运行结束后TaskTracker会得到消息，进而将消息汇报给JobTracker，reduce定时从 JobTracker获取该信息，reduce端默认有5个数据复制线程从map端复制数据；<br>​    Merge阶段:如果形成多个磁盘文件会进行合并。从map端复制来的数据 先写到reduce端的<strong>缓存</strong>中，同样缓存占用<strong>到达一定阈值后会将数据写到磁盘中</strong>，<strong>同样会进 partition、combine、排序等过程</strong>。如果形成多个磁盘 文件还会进行合并，<strong>最后一次合并的结果</strong>作为reduce的输入而不是写到磁盘中；</p>
+<p>一些要点：</p>
+<ol>
+<li>只要有一个map任务完成了，reduce任务就开始复制该map的输出</li>
+<li>reducer通过<strong>HTTP</strong>得到输出文件的<strong>分区</strong>。</li>
+<li>在将数据从内存存到磁盘中这个过程，就可以使用各种<strong>压缩</strong>算法了；</li>
+</ol>
+<h4 id="Shuffle过程中需要注意的以下点"><a href="#Shuffle过程中需要注意的以下点" class="headerlink" title="Shuffle过程中需要注意的以下点"></a>Shuffle过程中需要注意的以下点</h4><p>Shuffle同时涉及到Map和Reduce两端。<br>在Map端，map的所处的节点上，会有一个partition，combine，sort的操作；<br>在Reduce端，同样会有partition，combine，sort的操作，不过这次发生在分布式文件系统上；</p>
+<h3 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h3><p><img src="/2017/08/15/hadoopMRAdv/reduce.png" alt=""><br>此处主要是对受到的的<k2,v2>执行程序员编写的reduce方法。</k2,v2></p>
+
+      
+    </div>
+
+    
+      
+
+    
+
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/08/15/hadoopMRAdv/" data-id="cj6dixftm000ginjos1pc6xsc" class="article-share-link">
+        <i class="fa fa-share"></i> Share
+      </a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MapReduce/">MapReduce</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/分布式系统/">分布式系统</a></li></ul>
+
+
+    </footer>
+  </div>
+  
+    
+<ul id="article-nav" class="nav nav-pills nav-justified">
+  
+  <li role="presentation">
+    <a href="/2017/08/15/wordcount/" id="article-nav-older" class="article-nav-link-wrap">
+      <i class="fa fa-chevron-left pull-left"></i>
+      <span class="article-nav-link-title">wordcount的编写</span>
+    </a>
+  </li>
+  
+  
+</ul>
+
+
+  
+</article>
+
+
+
+
+        </div>
+        <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
+          
+  <div class="sidebar-module sidebar-module-inset">
+  <h4>About</h4>
+  <p></p>
+
+</div>
+
+
+  
+  <div class="sidebar-module">
+    <h4>Categories</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/categories/大数据/">大数据</a><span class="sidebar-module-list-count">8</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Tags</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/HDFS/">HDFS</a><span class="sidebar-module-list-count">4</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/MapReduce/">MapReduce</a><span class="sidebar-module-list-count">3</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/代码/">代码</a><span class="sidebar-module-list-count">1</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/分布式系统/">分布式系统</a><span class="sidebar-module-list-count">9</span></li><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/tags/大数据/">大数据</a><span class="sidebar-module-list-count">1</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Tag Cloud</h4>
+    <p class="tagcloud">
+      <a href="/tags/HDFS/" style="font-size: 16.67px;">HDFS</a> <a href="/tags/MapReduce/" style="font-size: 13.33px;">MapReduce</a> <a href="/tags/代码/" style="font-size: 10px;">代码</a> <a href="/tags/分布式系统/" style="font-size: 20px;">分布式系统</a> <a href="/tags/大数据/" style="font-size: 10px;">大数据</a>
+    </p>
+  </div>
+
+
+  
+  <div class="sidebar-module">
+    <h4>Archives</h4>
+    <ul class="sidebar-module-list"><li class="sidebar-module-list-item"><a class="sidebar-module-list-link" href="/archives/2017/08/">August 2017</a><span class="sidebar-module-list-count">9</span></li></ul>
+  </div>
+
+
+
+  
+  <div class="sidebar-module">
+    <h4>Recents</h4>
+    <ul class="sidebar-module-list">
+      
+        <li>
+          <a href="/2017/08/15/hadoopMRAdv/">hadoop高级</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/15/wordcount/">wordcount的编写</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/14/Hadoop-MapReduce/">Hadoop_MapReduce</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/11/0811JavaHadoop/">使用Java对HDFS进行文件操作</a>
+        </li>
+      
+        <li>
+          <a href="/2017/08/11/0811HadoopIO/">Hadoop IO操作</a>
+        </li>
+      
+    </ul>
+  </div>
+
+
+
+        </div>
+    </div>
+  </div>
+  <footer class="blog-footer">
+  <div class="container">
+    <div id="footer-info" class="inner">
+      &copy; 2017 H.W.Huang<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+  
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js" integrity="sha384-8gBf6Y4YYq7Jx97PIqmTwLPin4hxIzQw5aDmUg/DDhul9fFpbbLcLh3nTIIDJKhx" crossorigin="anonymous"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+
+
+<script src="/js/script.js"></script>
+
+</body>
+</html>
